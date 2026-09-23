@@ -100,8 +100,17 @@ div.sidebartitle { color: #1a3a5c; font-weight: bold; border-bottom: 1px solid #
 pre.verbatim { background: #f0f2f5; border: 1px solid #d0d6e0; border-radius: 4px; padding: 12px; font-size: 0.88em; }
 /* lwarp emits tables as <figure class="table">, never <div class="table"> */
 figure.table { margin: 2em 5%; }
+/* Subtables are inline-flex div.minipage children of figure.table; when they wrap onto
+   separate lines, center each block while keeping its caption text left-aligned. */
+figure.table { text-align: center; }
+figure.table > * { text-align: left; }
 table { border-collapse: collapse; }
-table tr.hline td { border-bottom: 1px solid #1a3a5c; }
+/* lwarp draws \hline / \midrule as a border-top on the row after it (lwarp.css);
+   only recolor that border. A border-bottom here drew a phantom rule under the row. */
+table tr.hline td { border-top-color: #1a3a5c; }
+/* Equal-width digits, so right-aligned numbers with a fixed number of decimals
+   line up on the decimal point (the HTML stand-in for the siunitx S column) */
+td { font-variant-numeric: tabular-nums; }
 
 /* Navigation */
 header { background: #1a3a5c; color: white; }
