@@ -1,0 +1,1237 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Dima Bykhovsky" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Plotting for engineers: visual perception, color and colormaps, choosing the encoding, axes, fonts, transparency, and figures inside a document." />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Transparency — Plotting</title>
+<link rel="stylesheet" type="text/css" href="lwarp_academic.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+     subequations: "0",
+     section: "",
+     loader: {
+          load: ['[tex]/tagformat', '[tex]/textmacros'],
+     },
+     startup: {
+          ready() {
+              //       These would be replaced by import commands if you wanted to make
+              //       a proper extension.
+              const Configuration = MathJax._.input.tex.Configuration.Configuration;
+              const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+              const Macro = MathJax._.input.tex.Symbol.Macro;
+              const TexError = MathJax._.input.tex.TexError.default;
+              const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+              const expandable = MathJax._.util.Options.expandable;
+
+
+              //       Insert the replacement string into the TeX string, and check
+              //       that there haven't been too many maxro substitutions (prevents
+              //       infinite loops).
+              const useArgument = (parser, text) => {
+                   parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                   parser.i = 0;
+                   if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                        throw new TexError('MaxMacroSub1',
+                        'MathJax maximum macro substitution count exceeded; ' +
+                        'is there a recursive macro call?');
+                   }
+              }
+
+
+              //       Create the command map for:
+              //            \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+              new CommandMap('Lwarp-macros', {
+                   ifstar: 'IfstarFunction',
+                   ifnextchar: 'IfnextcharFunction',
+                   ifblank: 'IfblankFunction',
+                   ifstrequal: 'IfstrequalFunction',
+                   gsubstitute: 'GsubstituteFunction',
+                   seteqnumber: 'SeteqnumberFunction'
+              }, {
+                   //       This function implements an ifstar macro.
+                   IfstarFunction(parser, name) {
+                        const resultstar = parser.GetArgument(name);
+                        const resultnostar = parser.GetArgument(name);
+                        const star = parser.GetStar();                        // true if there is a *
+                        useArgument(parser, star ? resultstar : resultnostar);
+                   },
+
+
+                   //       This function implements an ifnextchar macro.
+                   IfnextcharFunction(parser, name) {
+                        let whichchar = parser.GetArgument(name);
+                        if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                            // $ syntax highlighting
+                            whichchar = String.fromCodePoint(parseInt(whichchar));
+                        }
+                        const resultnextchar = parser.GetArgument(name);
+                        const resultnotnextchar = parser.GetArgument(name);
+                        const gotchar = (parser.GetNext() === whichchar);
+                        useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                   },
+
+
+                   // This function implements an ifblank macro.
+                   IfblankFunction(parser, name) {
+                        const blankarg = parser.GetArgument(name);
+                        const resultblank = parser.GetArgument(name);
+                        const resultnotblank = parser.GetArgument(name);
+                        const isblank = (blankarg.trim() == "");
+                        useArgument(parser, isblank ? resultblank : resultnotblank);
+                   },
+
+
+                   // This function implements an ifstrequal macro.
+                   IfstrequalFunction(parser, name) {
+                        const strequalfirst = parser.GetArgument(name);
+                        const strequalsecond = parser.GetArgument(name);
+                        const resultequal = parser.GetArgument(name);
+                        const resultnotequal = parser.GetArgument(name);
+                        const isequal = (strequalfirst == strequalsecond);
+                        useArgument(parser, isequal ? resultequal : resultnotequal);
+                   },
+
+
+                   // This function implements a gsub macro.
+                   GsubstituteFunction(parser, name) {
+                        const gsubfirst = parser.GetArgument(name);
+                        const gsubsecond = parser.GetArgument(name);
+                        const gsubthird = parser.GetArgument(name);
+                        let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                        useArgument(parser, gsubresult);
+                   },
+
+
+                   //       This function modifies the equation numbers.
+                   SeteqnumberFunction(parser, name) {
+                            //   Get the macro parameters
+                            const star = parser.GetStar();                      // true if there is a *
+                            const optBrackets = parser.GetBrackets(name);        // contents of optional brackets
+                            const newsubequations = parser.GetArgument(name);      // the subequations argument
+                            const neweqsection = parser.GetArgument(name);      // the eq section argument
+                            const neweqnumber = parser.GetArgument(name);        // the eq number argument
+                            MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                            MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                            parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                   }
+
+
+              });
+
+
+              //       Create the Lwarp-macros package
+              Configuration.create('Lwarp-macros', {
+                   handler: {macro: ['Lwarp-macros']}
+              });
+
+
+              MathJax.startup.defaultReady();
+
+
+              // For forward references:
+              MathJax.startup.input[0].preFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            MathJax.config.subequations = math.inputData.recompile.subequations;
+                            MathJax.config.section = math.inputData.recompile.section;
+                   }
+              });
+              MathJax.startup.input[0].postFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            math.inputData.recompile.subequations = MathJax.config.subequations;
+                            math.inputData.recompile.section = MathJax.config.section;
+                   }
+              });
+
+
+                   // For \left, \right with unicode-math:
+                   const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                   const {Symbol} = MathJax._.input.tex.Symbol;
+                   const {MapHandler} = MathJax._.input.tex.MapHandler;
+                   const delimiter = MapHandler.getMap('delimiter');
+                   delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                   delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                   delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                   delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                   delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                   delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                   delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                   delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                   delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                   delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                   delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                   delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                   delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                   delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                   delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                   delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                   delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                   delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                   delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                   delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                   delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                   delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                   delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                   delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                   delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                   delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                   delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                   delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                   delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                   delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                   delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                   delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                   delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                   delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                   delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                   delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                   delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                   delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                   delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+          }       // ready
+     },            // startup
+
+
+     tex: {
+          packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+          tags: "ams",
+                   tagformat: {
+                            number: function (n) {
+                                 if(MathJax.config.subequations==0)
+                                        return(MathJax.config.section + n);
+                                 else
+                                        return(MathJax.config.section + String.fromCharCode(96+n));
+                            },
+                   },
+     }
+}
+</script>
+
+
+<script
+          id="MathJax-script"
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="plotting-autopage-111"></a>
+<div class="pagegrid">
+
+
+<nav class="topnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+<div class="sidetoccontainer">
+
+
+<nav class="sidetoc">
+
+
+<div class="sidetoctitle">
+
+<p>
+<span class="sidetocthetitle">Plotting</span>
+</p>
+
+<p>
+Contents
+</p>
+</div>
+
+
+<div class="sidetoccontents">
+
+<p>
+<a href="index.html" class="linkhome" >
+Home</a>
+</p>
+
+<p>
+<a href="node-1.html#autosec-7" class="tocsection" >
+<span class="sectionnumber">1</span>&#x2003;Preface</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-9" class="tocsection" >
+<span class="sectionnumber">2</span>&#x2003;A Chart That Cost a Space Vehicle</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-10" class="tocsubsection" >
+<span class="sectionnumber">2.1</span>&#x2003;The Story</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-12" class="tocsubsection" >
+<span class="sectionnumber">2.2</span>&#x2003;The same data on axes</a>
+</p>
+
+
+<p>
+<a href="node-3.html#autosec-15" class="tocsection" >
+<span class="sectionnumber">3</span>&#x2003;Why Plot at All</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-19" class="tocsection" >
+<span class="sectionnumber">4</span>&#x2003;What the Eye Does for Free</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-23" class="tocsubsection" >
+<span class="sectionnumber">4.1</span>&#x2003;Two ways a graph is read</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-27" class="tocsection" >
+<span class="sectionnumber">5</span>&#x2003;Color</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-28" class="tocsubsection" >
+<span class="sectionnumber">5.1</span>&#x2003;Which part of a color can be ranked</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-31" class="tocsubsection" >
+<span class="sectionnumber">5.2</span>&#x2003;Color and grayscale are judged in context</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-33" class="tocsubsection" >
+<span class="sectionnumber">5.3</span>&#x2003;Colormaps</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-39" class="tocsubsection" >
+<span class="sectionnumber">5.4</span>&#x2003;Schemes</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-44" class="tocsubsection" >
+<span class="sectionnumber">5.5</span>&#x2003;Color deficiency</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-50" class="tocsubsection" >
+<span class="sectionnumber">5.6</span>&#x2003;Color Meaning</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-56" class="tocsection" >
+<span class="sectionnumber">6</span>&#x2003;Choosing the Encoding</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-58" class="tocsubsection" >
+<span class="sectionnumber">6.1</span>&#x2003;Case Study: Pie and 3D plots</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-62" class="tocsubsection" >
+<span class="sectionnumber">6.2</span>&#x2003;Case Study: Three variables on a flat page</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-64" class="tocsubsection" >
+<span class="sectionnumber">6.3</span>&#x2003;Case Study: Radar charts</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-67" class="tocsubsection" >
+<span class="sectionnumber">6.4</span>&#x2003;Case Study: Plot matrix</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-73" class="tocsection" >
+<span class="sectionnumber">7</span>&#x2003;Axes</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-74" class="tocsubsection" >
+<span class="sectionnumber">7.1</span>&#x2003;The zero baseline</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-77" class="tocsubsection" >
+<span class="sectionnumber">7.2</span>&#x2003;Cumulative totals</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-79" class="tocsubsection" >
+<span class="sectionnumber">7.3</span>&#x2003;Aspect ratio</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-81" class="tocsubsection" >
+<span class="sectionnumber">7.4</span>&#x2003;Ticks and labels</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-84" class="tocsubsection" >
+<span class="sectionnumber">7.5</span>&#x2003;Legends</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-87" class="tocsubsection" >
+<span class="sectionnumber">7.6</span>&#x2003;Many plots at once</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-90" class="tocsubsection" >
+<span class="sectionnumber">7.7</span>&#x2003;Close-ups</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-92" class="tocsubsection" >
+<span class="sectionnumber">7.8</span>&#x2003;Size and gridlines</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-96" class="tocsubsection" >
+<span class="sectionnumber">7.9</span>&#x2003;Logarithmic Axes</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-99" class="tocsection" >
+<span class="sectionnumber">8</span>&#x2003;Choosing a Font</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-100" class="tocsubsection" >
+<span class="sectionnumber">8.1</span>&#x2003;Figure size sets the text size</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-102" class="tocsubsection" >
+<span class="sectionnumber">8.2</span>&#x2003;The three kinds of face</a>
+</p>
+
+
+<p>
+<a href="node-9.html#autosec-108" class="tocsection" >
+<span class="sectionnumber">9</span>&#x2003;How a Reader Groups Marks</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-112" class="tocsection" >
+<span class="sectionnumber">10</span>&#x2003;Transparency</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-113" class="tocsubsection" >
+<span class="sectionnumber">10.1</span>&#x2003;Misuse</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-115" class="tocsubsection" >
+<span class="sectionnumber">10.2</span>&#x2003;Accumulation</a>
+</p>
+
+
+<p>
+<a href="node-11.html#autosec-119" class="tocsection" >
+<span class="sectionnumber">11</span>&#x2003;Ink That Carries No Data</a>
+</p>
+
+
+<p>
+<a href="node-12.html#autosec-122" class="tocsection" >
+<span class="sectionnumber">12</span>&#x2003;Figures Inside a Document</a>
+</p>
+
+
+</div>
+
+</nav>
+
+</div>
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<h1>Plotting</h1>
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+    style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\( \newcommand {\abs }[1]{\lvert #1\rvert } \)
+
+\( \DeclareMathOperator {\sign }{sign} \)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\newcommand {\bm }[1]{\boldsymbol {#1}}\)
+
+\(\require {physics}\)
+
+\(\newcommand {\LWRphystrig }[2]{\ifblank {#1}{\textrm {#2}}{\textrm {#2}^{#1}}}\)
+
+\(\renewcommand {\sin }[1][]{\LWRphystrig {#1}{sin}}\)
+
+\(\renewcommand {\sinh }[1][]{\LWRphystrig {#1}{sinh}}\)
+
+\(\renewcommand {\arcsin }[1][]{\LWRphystrig {#1}{arcsin}}\)
+
+\(\renewcommand {\asin }[1][]{\LWRphystrig {#1}{asin}}\)
+
+\(\renewcommand {\cos }[1][]{\LWRphystrig {#1}{cos}}\)
+
+\(\renewcommand {\cosh }[1][]{\LWRphystrig {#1}{cosh}}\)
+
+\(\renewcommand {\arccos }[1][]{\LWRphystrig {#1}{arcos}}\)
+
+\(\renewcommand {\acos }[1][]{\LWRphystrig {#1}{acos}}\)
+
+\(\renewcommand {\tan }[1][]{\LWRphystrig {#1}{tan}}\)
+
+\(\renewcommand {\tanh }[1][]{\LWRphystrig {#1}{tanh}}\)
+
+\(\renewcommand {\arctan }[1][]{\LWRphystrig {#1}{arctan}}\)
+
+\(\renewcommand {\atan }[1][]{\LWRphystrig {#1}{atan}}\)
+
+\(\renewcommand {\csc }[1][]{\LWRphystrig {#1}{csc}}\)
+
+\(\renewcommand {\csch }[1][]{\LWRphystrig {#1}{csch}}\)
+
+\(\renewcommand {\arccsc }[1][]{\LWRphystrig {#1}{arccsc}}\)
+
+\(\renewcommand {\acsc }[1][]{\LWRphystrig {#1}{acsc}}\)
+
+\(\renewcommand {\sec }[1][]{\LWRphystrig {#1}{sec}}\)
+
+\(\renewcommand {\sech }[1][]{\LWRphystrig {#1}{sech}}\)
+
+\(\renewcommand {\arcsec }[1][]{\LWRphystrig {#1}{arcsec}}\)
+
+\(\renewcommand {\asec }[1][]{\LWRphystrig {#1}{asec}}\)
+
+\(\renewcommand {\cot }[1][]{\LWRphystrig {#1}{cot}}\)
+
+\(\renewcommand {\coth }[1][]{\LWRphystrig {#1}{coth}}\)
+
+\(\renewcommand {\arccot }[1][]{\LWRphystrig {#1}{arccot}}\)
+
+\(\renewcommand {\acot }[1][]{\LWRphystrig {#1}{acot}}\)
+
+\(\require {cancel}\)
+
+\(\newcommand {\underuparrow }[1]{{\underset {\uparrow }{#1}}}\)
+
+\(\DeclareMathOperator *{\argmax }{argmax}\)
+
+\(\DeclareMathOperator *{\argmin }{arg\,min}\)
+
+\(\def \E [#1]{\mathbb {E}\!\left [ #1 \right ]}\)
+
+\(\def \Var [#1]{\operatorname {Var}\!\left [ #1 \right ]}\)
+
+\(\def \Cov [#1]{\operatorname {Cov}\!\left [ #1 \right ]}\)
+
+\(\newcommand {\floor }[1]{\lfloor #1 \rfloor }\)
+
+\(\newcommand {\DTFTH }{ H \brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DTFTX }{ X\brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DFTtr }[1]{\mathrm {DFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtr }[1]{\mathrm {DTFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtrI }[1]{\mathrm {DTFT^{-1}}\left \{#1\right \}}\)
+
+\(\newcommand {\Ftr }[1]{ \mathcal {F}\left \{#1\right \}}\)
+
+\(\newcommand {\FtrI }[1]{ \mathcal {F}^{-1}\left \{#1\right \}}\)
+
+\(\newcommand {\Zover }{\overset {\mathscr Z}{\Longleftrightarrow }}\)
+
+\(\renewcommand {\real }{\mathbb {R}}\)
+
+\(\newcommand {\ba }{\mathbf {a}}\)
+
+\(\newcommand {\bb }{\mathbf {b}}\)
+
+\(\newcommand {\bc }{\mathbf {c}}\)
+
+\(\newcommand {\bd }{\mathbf {d}}\)
+
+\(\newcommand {\be }{\mathbf {e}}\)
+
+\(\newcommand {\bf }{\mathbf {f}}\)
+
+\(\newcommand {\bg }{\mathbf {g}}\)
+
+\(\newcommand {\bh }{\mathbf {h}}\)
+
+\(\newcommand {\bi }{\mathbf {i}}\)
+
+\(\newcommand {\bn }{\mathbf {n}}\)
+
+\(\newcommand {\bo }{\mathbf {o}}\)
+
+\(\newcommand {\bp }{\mathbf {p}}\)
+
+\(\newcommand {\bq }{\mathbf {q}}\)
+
+\(\newcommand {\br }{\mathbf {r}}\)
+
+\(\newcommand {\bs }{\mathbf {s}}\)
+
+\(\newcommand {\bt }{\mathbf {t}}\)
+
+\(\newcommand {\bu }{\mathbf {u}}\)
+
+\(\newcommand {\bv }{\mathbf {v}}\)
+
+\(\newcommand {\bw }{\mathbf {w}}\)
+
+\(\newcommand {\bx }{\mathbf {x}}\)
+
+\(\newcommand {\bxx }{\mathbf {xx}}\)
+
+\(\newcommand {\bxy }{\mathbf {xy}}\)
+
+\(\newcommand {\by }{\mathbf {y}}\)
+
+\(\newcommand {\byx }{\mathbf {yx}}\)
+
+\(\newcommand {\byy }{\mathbf {yy}}\)
+
+\(\newcommand {\bz }{\mathbf {z}}\)
+
+\(\newcommand {\bA }{\mathbf {A}}\)
+
+\(\newcommand {\bB }{\mathbf {B}}\)
+
+\(\newcommand {\bC }{\mathbf {C}}\)
+
+\(\newcommand {\bD }{\mathbf {D}}\)
+
+\(\newcommand {\bH }{\mathbf {H}}\)
+
+\(\newcommand {\bI }{\mathbf {I}}\)
+
+\(\newcommand {\bK }{\mathbf {K}}\)
+
+\(\newcommand {\bM }{\mathbf {M}}\)
+
+\(\newcommand {\bP }{\mathbf {P}}\)
+
+\(\newcommand {\bQ }{\mathbf {Q}}\)
+
+\(\newcommand {\bR }{\mathbf {R}}\)
+
+\(\newcommand {\bS }{\mathbf {S}}\)
+
+\(\newcommand {\bU }{\mathbf {U}}\)
+
+\(\newcommand {\bW }{\mathbf {W}}\)
+
+\(\newcommand {\bX }{\mathbf {X}}\)
+
+\(\newcommand {\bY }{\mathbf {Y}}\)
+
+\(\newcommand {\bZ }{\mathbf {Z}}\)
+
+\(\newcommand {\balpha }{\bm {\alpha }}\)
+
+\(\newcommand {\bth }{{\bm {\theta }}}\)
+
+\(\newcommand {\bepsilon }{{\bm {\epsilon }}}\)
+
+\(\newcommand {\bmu }{{\bm {\mu }}}\)
+
+\(\newcommand {\bgamma }{{\bm {\gamma }}}\)
+
+\(\newcommand {\bphi }{\bm {\phi }}\)
+
+\(\newcommand {\bOne }{\mathbf {1}}\)
+
+\(\newcommand {\bZero }{\mathbf {0}}\)
+
+\(\newcommand {\indFunc }{\mathbb {1}}\)
+
+\(\newcommand {\btx }{\tilde {\bx }}\)
+
+\(\newcommand {\loss }{\mathcal {L}}\)
+
+\(\newcommand {\score }{\mathcal {S}}\)
+
+\(\newcommand {\SSE }{\mathrm {SSE}}\)
+
+\(\newcommand {\SST }{\mathrm {SST}}\)
+
+\(\newcommand {\SSR }{\mathrm {SSR}}\)
+
+\(\newcommand {\MSE }{\mathrm {MSE}}\)
+
+\(\newcommand {\RMSE }{\mathrm {RMSE}}\)
+
+\(\newcommand {\toprule }[1][]{\hline }\)
+
+\(\let \midrule \toprule \)
+
+\(\let \bottomrule \toprule \)
+
+\(\def \LWRbooktabscmidruleparen (#1)#2{}\)
+
+\(\newcommand {\LWRbooktabscmidrulenoparen }[1]{}\)
+
+\(\newcommand {\cmidrule }[1][]{\ifnextchar (\LWRbooktabscmidruleparen \LWRbooktabscmidrulenoparen }\)
+
+\(\newcommand {\morecmidrules }{}\)
+
+\(\newcommand {\specialrule }[3]{\hline }\)
+
+\(\newcommand {\addlinespace }[1][]{}\)
+
+\(\newcommand {\LWRsubmultirow }[2][]{#2}\)
+
+\(\newcommand {\LWRmultirow }[2][]{\LWRsubmultirow }\)
+
+\(\newcommand {\multirow }[2][]{\LWRmultirow }\)
+
+\(\newcommand {\mrowcell }{}\)
+
+\(\newcommand {\mcolrowcell }{}\)
+
+\(\newcommand {\STneed }[1]{}\)
+
+\(\newcommand {\tcbset }[1]{}\)
+
+\(\newcommand {\tcbsetforeverylayer }[1]{}\)
+
+\(\newcommand {\tcbox }[2][]{\boxed {\text {#2}}}\)
+
+\(\newcommand {\tcboxfit }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcblower }{}\)
+
+\(\newcommand {\tcbline }{}\)
+
+\(\newcommand {\tcbtitle }{}\)
+
+\(\newcommand {\tcbsubtitle [2][]{\mathrm {#2}}}\)
+
+\(\newcommand {\tcboxmath }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcbhighmath }[2][]{\boxed {#2}}\)
+
+\(\require {colortbl}\)
+
+\(\let \LWRorigcolumncolor \columncolor \)
+
+\(\renewcommand {\columncolor }[2][named]{\LWRorigcolumncolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigrowcolor \rowcolor \)
+
+\(\renewcommand {\rowcolor }[2][named]{\LWRorigrowcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigcellcolor \cellcolor \)
+
+\(\renewcommand {\cellcolor }[2][named]{\LWRorigcellcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+</div>
+
+<!--
+...... section Transparency ......
+-->
+<h4 id="autosec-112"><span class="sectionnumber">10&#x2003;</span>Transparency</h4>
+<a id="plotting-autopage-112"></a>
+<a id="plotting-autofile-10"></a>
+
+<a id="sec-app-plot-alpha"></a>
+
+<p>
+Marks land on marks. In a dense scatter at full opacity the mark drawn last covers the ones drawn before it, so the panel reports the outline of the cloud and the accident of the draw order rather than what is inside it. Every
+library offers an opacity setting for exactly this problem: <kbd>alpha</kbd> in <kbd>matplotlib</kbd>, <kbd>FaceAlpha</kbd> and <kbd>EdgeAlpha</kbd> in MATLAB. A mark of color \(c\) drawn at opacity \(\alpha \)
+does not replace background color \(c_{\mathrm {bg}}\) that lies under it, it is mixed into it,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{0}\)</span>
+
+<!--
+
+
+                                                                                                         cout = α c + (1 − α) cbg ,                                               (10.1)--><a id="eq-plot-alpha-over"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+c_{\mathrm {out}} = \alpha \,c + (1-\alpha )\,c_{\mathrm {bg}} , \label {eq-plot-alpha-over}
+\end{equation}
+
+</p>
+
+<p>
+so a second mark on the same spot mixes into the result of the first, a third into the result of the second, and after \(n\) of them the ink accumulated is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{1}\)</span>
+
+<!--
+
+
+                                                                                                           an = 1 − (1 − α)n .                                                   (10.2)--><a id="eq-plot-alpha-stack"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+a_n = 1 - (1-\alpha )^n .       \label {eq-plot-alpha-stack}
+\end{equation}
+
+</p>
+
+<p>
+Two consequences follow from the same two lines, and they are the two halves of this section. Darkness now reports how many marks are there, which is what makes transparency work at all, and darkness now reports how many
+marks are there whether or not that is what the figure meant to say.
+</p>
+<!--
+...... subsection Misuse ......
+-->
+<h5 id="autosec-113"><span class="sectionnumber">10.1&#x2003;</span>Misuse</h5>
+<a id="plotting-autopage-113"></a>
+
+
+<a id="sec-app-plot-alpha-misuse"></a>
+
+<p>
+Both failures in Fig.&nbsp;<a href="node-10.html#fig-plot-alpha-misuse">10.1</a> come from the same place: an opacity was set for the appearance of a single mark, and Eq.&nbsp;<span class="textup">(<a
+href="node-10.html#eq-plot-alpha-over">10.1</a>)</span> was then applied to the places where the marks meet. Both fixes are the panel beside the failure, and they are the same fix: give the distinction to a channel that
+does not composite.
+</p>
+
+<figure id="autoid-47" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_alpha_misuse.svg" target="_blank" ><img
+    src="figs/plot_alpha_misuse.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;10.1: Two ways an opacity setting says something the figure did not intend. (a) Two class regions at \(\alpha = 0.5\). The intersection renders as a third color that is in neither of them. (b) The same two regions
+with no opacity anywhere: both classes filled solid and outlined in their own key color, and the area they share carrying one fill under the other class color as a hatch, bounded by one arc of each outline. The page holds only the two
+colors the key names, the key names the shared area as well, and the draw order changes nothing. (c) and (d) Twenty runs behind the one under discussion: black at \(\alpha = 0.3\) composites over white to exactly the \(30\%\)
+ink gray of (d), so a lone curve is identical in the two panels and every difference between them is a crossing. Where the runs converge, up to \(7\) of them fall within one line width, and that patch carries \(92\%\) ink in (c) against
+the \(30\%\) of a lone curve, a factor of \(3.1\).
+
+</div>
+
+<a id="fig-plot-alpha-misuse"></a>
+
+</div>
+
+</figure>
+
+<p>
+<em>Two categorical colors must never overlap at \(\alpha \).</em> Fig.&nbsp;<a href="node-10.html#fig-plot-alpha-misuse">10.1</a>(a) is the failure: the intersection of a blue region and an orange one is a third color,
+present in the figure and in neither key, and by Eq.&nbsp;<span class="textup">(<a href="node-10.html#eq-plot-alpha-over">10.1</a>)</span> which of the two possible mixtures it is depends on the order the two were
+drawn in. The legend is no help. The remedy is to keep the classes in channels that cannot mix. Fig.&nbsp;<a href="node-10.html#fig-plot-alpha-misuse">10.1</a>(b) fills both classes solid, outlines each in its own key color
+so the shared area has a boundary of its own, and hatches that area in the other class color: both class colors reach the page exactly as the key shows them, the shared area is visible without being a third color, and it is a third
+entry in the key rather than something the reader has to decode. Separate panels, or a single hue where the darkness means only “more”, do the same job.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:              #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:                1px solid #BF6000; background:         #BF6000; color:      #FFFFFF; "
+>
+
+<p>
+Transparency changes the color
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+By Eq.&nbsp;<span class="textup">(<a href="node-10.html#eq-plot-alpha-over">10.1</a>)</span> the color on the page is not the color in the palette, and it changes again if the panel is later given a background: the
+same mark at \(\alpha = 0.5\) is one color over white and another over a gray panel. So the gray print and the color vision deficiency checks of Sec.&nbsp;<a href="node-5.html#sec-app-plot-checks">5.5</a> have to be run
+on the rendered figure rather than on the palette it was specified from, and a colormap loses its perceptual uniformity as soon as an opacity is applied to it.
+</p>
+</div>
+
+</div>
+
+<p>
+<em>For de-emphasis, use a light solid color rather than \(\alpha \).</em> Drawing the context series in black at low opacity, is not the same as drawing them light: the crossings accumulate by Eq.&nbsp;<span
+class="textup">(<a href="node-10.html#eq-plot-alpha-stack">10.2</a>)</span> and darken wherever the series happen to bunch. Fig.&nbsp;<a href="node-10.html#fig-plot-alpha-misuse">10.1</a>(c) and (d) are
+the same twenty runs de-emphasized both ways, matched so that a lone curve renders identically in the two panels. The alpha panel grows a dark bar exactly where the runs converge, which competes with the highlighted curve for
+the attention the highlight was supposed to own, and which reports a bunching that no key on the page quantifies.
+</p>
+<!--
+...... subsection Accumulation ......
+-->
+<h5 id="autosec-115"><span class="sectionnumber">10.2&#x2003;</span>Accumulation</h5>
+<a id="plotting-autopage-115"></a>
+
+
+<a id="sec-app-plot-alpha-accum"></a>
+
+<p>
+Used deliberately, the same accumulation is the point: a dense scatter stops being a silhouette and becomes a density display. That makes \(\alpha \) a magnitude channel, sixth in the ranking of Sec.&nbsp;<a
+href="node-6.html#sec-app-plot-encoding">6</a>. It is also a channel that runs out, as Fig.&nbsp;<a href="node-10.html#fig-plot-alpha-accum">10.2</a> shows.
+</p>
+
+<figure id="autoid-48" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_alpha_accum.svg" target="_blank" ><img
+    src="figs/plot_alpha_accum.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;10.2: The ink \(a_n\) of Eq.&nbsp;<span class="textup">(<a href="node-10.html#eq-plot-alpha-stack">10.2</a>)</span> against the number of marks stacked at one spot, for four opacities. The squares on
+the \(\alpha = 0.05\) curve are filled with the color the page actually renders at \(n = 1\), \(2\), \(5\), \(10\), \(50\) and \(200\), so the curve can be checked against its own ink. Past the dashed level at \(0.95\), marked on
+each curve by a dot, a further mark changes nothing the reader can see.
+
+</div>
+
+<a id="fig-plot-alpha-accum"></a>
+
+</div>
+
+</figure>
+
+<p>
+<em>Set \(\alpha \) from the overlap, not by taste.</em> Eq.&nbsp;<span class="textup">(<a href="node-10.html#eq-plot-alpha-stack">10.2</a>)</span> saturates, and quickly. Ink reaches \(95\%\) of full at \(n^{\ast
+} = \ln (0.05) / \ln (1-\alpha ) \approx 3/\alpha \), which is \(4.3\) marks at \(\alpha = 0.5\) and \(58.4\) at \(\alpha = 0.05\). Past that count the channel is exhausted and the picture is a silhouette again,
+which is why Fig.&nbsp;<a href="node-10.html#fig-plot-alpha">10.3</a>(b) is barely an improvement on Fig.&nbsp;<a href="node-10.html#fig-plot-alpha">10.3</a>(a). The working rule is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{10.}{2}\)</span>
+
+<!--
+
+                                                                                                                   1
+                                                                                                             α≈        ,                                                          (10.3)--><a id="eq-plot-alpha-rule"></a><!--
+                                                                                                                  ntyp
+
+-->
+
+<p>
+
+\begin{equation}
+\alpha \approx \frac {1}{n_{\mathrm {typ}}} , \label {eq-plot-alpha-rule}
+\end{equation}
+
+</p>
+
+<p>
+where \(n_{\mathrm {typ}}\) is the number of marks that typically share one marker footprint, which is a property of the data and the marker size and can be counted rather than guessed. It puts the typical spot at \(1 -
+e^{-1} = 0.63\) of full ink, in the middle of the channel with room above it for the crowded spots and below it for the sparse ones.
+</p>
+
+<figure id="autoid-49" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_alpha.svg" target="_blank" ><img
+    src="figs/plot_alpha.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;10.3: Twenty thousand points from a broad cloud holding a dense core and a small tight knot, drawn three ways on identical axes with identical \(1.6\)&nbsp;pt markers. (a) At \(\alpha = 1\), \(88.0\%\) of the
+points land on ink that is already full, so the panel reports the outline of the cloud and the accident of draw order, and neither the core nor the knot survives. (b) At \(\alpha = 0.5\), \(54.0\%\) of them still do, because ink is
+\(0.99\) of full by the seventh mark: halving the opacity does not halve the problem. (c) At \(\alpha = 0.048\), which is \(1/n_{\mathrm {typ}}\) for a measured typical overlap of \(n_{\mathrm {typ}} = 21\) marks per
+marker footprint, the core and the knot both appear. The price is that a lone point now carries \(4.8\%\) ink, near the edge of what can be seen at all.
+
+</div>
+
+<a id="fig-plot-alpha"></a>
+
+</div>
+
+</figure>
+
+<p>
+<em>The same choice hides the isolated point.</em> An \(\alpha \) small enough to resolve a crowd renders a lone mark at \(\alpha \) of full ink and nothing more, \(4.8\%\) in Fig.&nbsp;<a
+href="node-10.html#fig-plot-alpha">10.3</a>(c), so the outlier that a scatter is often drawn to find is the first thing the setting removes. Where both matter, the two populations are two layers: the crowd at low \(\alpha \),
+and the points that are alone drawn separately at full strength.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #B20000; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #B20000; border-bottom:              1px solid #B20000; background:         #B20000; color:     #FFFFFF; "
+>
+
+<p>
+Transparency is a magnitude channel without a key
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A scatter at \(\alpha &lt; 1\) encodes count as darkness, so it falls under the rule of Sec.&nbsp;<a href="node-6.html#sec-app-plot-matrix">6.4</a>: every magnitude channel needs a zero and a key. It has neither, and
+Eq.&nbsp;<span class="textup">(<a href="node-10.html#eq-plot-alpha-stack">10.2</a>)</span> is not linear in the count either, so the darkness cannot be read back even in principle. Use it to reveal that structure exists,
+never to report how much of it there is.
+</p>
+</div>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #B20000; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #B20000; border-bottom:              1px solid #B20000; background:         #B20000; color:     #FFFFFF; "
+>
+
+<p>
+PDF file size
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A transparent mark forces a transparency group into the PDFT. The twenty thousand markers of each panel of Fig.&nbsp;<a href="node-10.html#fig-plot-alpha">10.3</a> make a \(0.9\)&nbsp;MB file that is slow to open
+and slower to print. <i>Rasterizing</i> the dense layer alone, keeps the axes and every label vector while the cloud becomes an image at the export resolution, and brings the same figure to \(205\)&nbsp;kB.
+</p>
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<nav class="botnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+
+</div><!-- grid -->
+</body>
+</html>

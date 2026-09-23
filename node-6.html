@@ -1,0 +1,1706 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Dima Bykhovsky" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Plotting for engineers: visual perception, color and colormaps, choosing the encoding, axes, fonts, transparency, and figures inside a document." />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Choosing the Encoding — Plotting</title>
+<link rel="stylesheet" type="text/css" href="lwarp_academic.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+     subequations: "0",
+     section: "",
+     loader: {
+          load: ['[tex]/tagformat', '[tex]/textmacros'],
+     },
+     startup: {
+          ready() {
+              //       These would be replaced by import commands if you wanted to make
+              //       a proper extension.
+              const Configuration = MathJax._.input.tex.Configuration.Configuration;
+              const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+              const Macro = MathJax._.input.tex.Symbol.Macro;
+              const TexError = MathJax._.input.tex.TexError.default;
+              const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+              const expandable = MathJax._.util.Options.expandable;
+
+
+              //       Insert the replacement string into the TeX string, and check
+              //       that there haven't been too many maxro substitutions (prevents
+              //       infinite loops).
+              const useArgument = (parser, text) => {
+                   parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                   parser.i = 0;
+                   if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                        throw new TexError('MaxMacroSub1',
+                        'MathJax maximum macro substitution count exceeded; ' +
+                        'is there a recursive macro call?');
+                   }
+              }
+
+
+              //       Create the command map for:
+              //            \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+              new CommandMap('Lwarp-macros', {
+                   ifstar: 'IfstarFunction',
+                   ifnextchar: 'IfnextcharFunction',
+                   ifblank: 'IfblankFunction',
+                   ifstrequal: 'IfstrequalFunction',
+                   gsubstitute: 'GsubstituteFunction',
+                   seteqnumber: 'SeteqnumberFunction'
+              }, {
+                   //       This function implements an ifstar macro.
+                   IfstarFunction(parser, name) {
+                        const resultstar = parser.GetArgument(name);
+                        const resultnostar = parser.GetArgument(name);
+                        const star = parser.GetStar();                        // true if there is a *
+                        useArgument(parser, star ? resultstar : resultnostar);
+                   },
+
+
+                   //       This function implements an ifnextchar macro.
+                   IfnextcharFunction(parser, name) {
+                        let whichchar = parser.GetArgument(name);
+                        if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                            // $ syntax highlighting
+                            whichchar = String.fromCodePoint(parseInt(whichchar));
+                        }
+                        const resultnextchar = parser.GetArgument(name);
+                        const resultnotnextchar = parser.GetArgument(name);
+                        const gotchar = (parser.GetNext() === whichchar);
+                        useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                   },
+
+
+                   // This function implements an ifblank macro.
+                   IfblankFunction(parser, name) {
+                        const blankarg = parser.GetArgument(name);
+                        const resultblank = parser.GetArgument(name);
+                        const resultnotblank = parser.GetArgument(name);
+                        const isblank = (blankarg.trim() == "");
+                        useArgument(parser, isblank ? resultblank : resultnotblank);
+                   },
+
+
+                   // This function implements an ifstrequal macro.
+                   IfstrequalFunction(parser, name) {
+                        const strequalfirst = parser.GetArgument(name);
+                        const strequalsecond = parser.GetArgument(name);
+                        const resultequal = parser.GetArgument(name);
+                        const resultnotequal = parser.GetArgument(name);
+                        const isequal = (strequalfirst == strequalsecond);
+                        useArgument(parser, isequal ? resultequal : resultnotequal);
+                   },
+
+
+                   // This function implements a gsub macro.
+                   GsubstituteFunction(parser, name) {
+                        const gsubfirst = parser.GetArgument(name);
+                        const gsubsecond = parser.GetArgument(name);
+                        const gsubthird = parser.GetArgument(name);
+                        let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                        useArgument(parser, gsubresult);
+                   },
+
+
+                   //       This function modifies the equation numbers.
+                   SeteqnumberFunction(parser, name) {
+                            //   Get the macro parameters
+                            const star = parser.GetStar();                      // true if there is a *
+                            const optBrackets = parser.GetBrackets(name);        // contents of optional brackets
+                            const newsubequations = parser.GetArgument(name);      // the subequations argument
+                            const neweqsection = parser.GetArgument(name);      // the eq section argument
+                            const neweqnumber = parser.GetArgument(name);        // the eq number argument
+                            MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                            MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                            parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                   }
+
+
+              });
+
+
+              //       Create the Lwarp-macros package
+              Configuration.create('Lwarp-macros', {
+                   handler: {macro: ['Lwarp-macros']}
+              });
+
+
+              MathJax.startup.defaultReady();
+
+
+              // For forward references:
+              MathJax.startup.input[0].preFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            MathJax.config.subequations = math.inputData.recompile.subequations;
+                            MathJax.config.section = math.inputData.recompile.section;
+                   }
+              });
+              MathJax.startup.input[0].postFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            math.inputData.recompile.subequations = MathJax.config.subequations;
+                            math.inputData.recompile.section = MathJax.config.section;
+                   }
+              });
+
+
+                   // For \left, \right with unicode-math:
+                   const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                   const {Symbol} = MathJax._.input.tex.Symbol;
+                   const {MapHandler} = MathJax._.input.tex.MapHandler;
+                   const delimiter = MapHandler.getMap('delimiter');
+                   delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                   delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                   delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                   delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                   delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                   delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                   delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                   delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                   delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                   delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                   delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                   delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                   delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                   delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                   delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                   delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                   delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                   delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                   delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                   delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                   delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                   delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                   delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                   delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                   delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                   delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                   delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                   delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                   delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                   delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                   delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                   delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                   delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                   delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                   delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                   delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                   delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                   delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                   delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+          }       // ready
+     },            // startup
+
+
+     tex: {
+          packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+          tags: "ams",
+                   tagformat: {
+                            number: function (n) {
+                                 if(MathJax.config.subequations==0)
+                                        return(MathJax.config.section + n);
+                                 else
+                                        return(MathJax.config.section + String.fromCharCode(96+n));
+                            },
+                   },
+     }
+}
+</script>
+
+
+<script
+          id="MathJax-script"
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="plotting-autopage-55"></a>
+<div class="pagegrid">
+
+
+<nav class="topnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+<div class="sidetoccontainer">
+
+
+<nav class="sidetoc">
+
+
+<div class="sidetoctitle">
+
+<p>
+<span class="sidetocthetitle">Plotting</span>
+</p>
+
+<p>
+Contents
+</p>
+</div>
+
+
+<div class="sidetoccontents">
+
+<p>
+<a href="index.html" class="linkhome" >
+Home</a>
+</p>
+
+<p>
+<a href="node-1.html#autosec-7" class="tocsection" >
+<span class="sectionnumber">1</span>&#x2003;Preface</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-9" class="tocsection" >
+<span class="sectionnumber">2</span>&#x2003;A Chart That Cost a Space Vehicle</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-10" class="tocsubsection" >
+<span class="sectionnumber">2.1</span>&#x2003;The Story</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-12" class="tocsubsection" >
+<span class="sectionnumber">2.2</span>&#x2003;The same data on axes</a>
+</p>
+
+
+<p>
+<a href="node-3.html#autosec-15" class="tocsection" >
+<span class="sectionnumber">3</span>&#x2003;Why Plot at All</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-19" class="tocsection" >
+<span class="sectionnumber">4</span>&#x2003;What the Eye Does for Free</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-23" class="tocsubsection" >
+<span class="sectionnumber">4.1</span>&#x2003;Two ways a graph is read</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-27" class="tocsection" >
+<span class="sectionnumber">5</span>&#x2003;Color</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-28" class="tocsubsection" >
+<span class="sectionnumber">5.1</span>&#x2003;Which part of a color can be ranked</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-31" class="tocsubsection" >
+<span class="sectionnumber">5.2</span>&#x2003;Color and grayscale are judged in context</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-33" class="tocsubsection" >
+<span class="sectionnumber">5.3</span>&#x2003;Colormaps</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-39" class="tocsubsection" >
+<span class="sectionnumber">5.4</span>&#x2003;Schemes</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-44" class="tocsubsection" >
+<span class="sectionnumber">5.5</span>&#x2003;Color deficiency</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-50" class="tocsubsection" >
+<span class="sectionnumber">5.6</span>&#x2003;Color Meaning</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-56" class="tocsection" >
+<span class="sectionnumber">6</span>&#x2003;Choosing the Encoding</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-58" class="tocsubsection" >
+<span class="sectionnumber">6.1</span>&#x2003;Case Study: Pie and 3D plots</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-62" class="tocsubsection" >
+<span class="sectionnumber">6.2</span>&#x2003;Case Study: Three variables on a flat page</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-64" class="tocsubsection" >
+<span class="sectionnumber">6.3</span>&#x2003;Case Study: Radar charts</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-67" class="tocsubsection" >
+<span class="sectionnumber">6.4</span>&#x2003;Case Study: Plot matrix</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-73" class="tocsection" >
+<span class="sectionnumber">7</span>&#x2003;Axes</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-74" class="tocsubsection" >
+<span class="sectionnumber">7.1</span>&#x2003;The zero baseline</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-77" class="tocsubsection" >
+<span class="sectionnumber">7.2</span>&#x2003;Cumulative totals</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-79" class="tocsubsection" >
+<span class="sectionnumber">7.3</span>&#x2003;Aspect ratio</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-81" class="tocsubsection" >
+<span class="sectionnumber">7.4</span>&#x2003;Ticks and labels</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-84" class="tocsubsection" >
+<span class="sectionnumber">7.5</span>&#x2003;Legends</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-87" class="tocsubsection" >
+<span class="sectionnumber">7.6</span>&#x2003;Many plots at once</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-90" class="tocsubsection" >
+<span class="sectionnumber">7.7</span>&#x2003;Close-ups</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-92" class="tocsubsection" >
+<span class="sectionnumber">7.8</span>&#x2003;Size and gridlines</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-96" class="tocsubsection" >
+<span class="sectionnumber">7.9</span>&#x2003;Logarithmic Axes</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-99" class="tocsection" >
+<span class="sectionnumber">8</span>&#x2003;Choosing a Font</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-100" class="tocsubsection" >
+<span class="sectionnumber">8.1</span>&#x2003;Figure size sets the text size</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-102" class="tocsubsection" >
+<span class="sectionnumber">8.2</span>&#x2003;The three kinds of face</a>
+</p>
+
+
+<p>
+<a href="node-9.html#autosec-108" class="tocsection" >
+<span class="sectionnumber">9</span>&#x2003;How a Reader Groups Marks</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-112" class="tocsection" >
+<span class="sectionnumber">10</span>&#x2003;Transparency</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-113" class="tocsubsection" >
+<span class="sectionnumber">10.1</span>&#x2003;Misuse</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-115" class="tocsubsection" >
+<span class="sectionnumber">10.2</span>&#x2003;Accumulation</a>
+</p>
+
+
+<p>
+<a href="node-11.html#autosec-119" class="tocsection" >
+<span class="sectionnumber">11</span>&#x2003;Ink That Carries No Data</a>
+</p>
+
+
+<p>
+<a href="node-12.html#autosec-122" class="tocsection" >
+<span class="sectionnumber">12</span>&#x2003;Figures Inside a Document</a>
+</p>
+
+
+</div>
+
+</nav>
+
+</div>
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<h1>Plotting</h1>
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+    style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\( \newcommand {\abs }[1]{\lvert #1\rvert } \)
+
+\( \DeclareMathOperator {\sign }{sign} \)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\newcommand {\bm }[1]{\boldsymbol {#1}}\)
+
+\(\require {physics}\)
+
+\(\newcommand {\LWRphystrig }[2]{\ifblank {#1}{\textrm {#2}}{\textrm {#2}^{#1}}}\)
+
+\(\renewcommand {\sin }[1][]{\LWRphystrig {#1}{sin}}\)
+
+\(\renewcommand {\sinh }[1][]{\LWRphystrig {#1}{sinh}}\)
+
+\(\renewcommand {\arcsin }[1][]{\LWRphystrig {#1}{arcsin}}\)
+
+\(\renewcommand {\asin }[1][]{\LWRphystrig {#1}{asin}}\)
+
+\(\renewcommand {\cos }[1][]{\LWRphystrig {#1}{cos}}\)
+
+\(\renewcommand {\cosh }[1][]{\LWRphystrig {#1}{cosh}}\)
+
+\(\renewcommand {\arccos }[1][]{\LWRphystrig {#1}{arcos}}\)
+
+\(\renewcommand {\acos }[1][]{\LWRphystrig {#1}{acos}}\)
+
+\(\renewcommand {\tan }[1][]{\LWRphystrig {#1}{tan}}\)
+
+\(\renewcommand {\tanh }[1][]{\LWRphystrig {#1}{tanh}}\)
+
+\(\renewcommand {\arctan }[1][]{\LWRphystrig {#1}{arctan}}\)
+
+\(\renewcommand {\atan }[1][]{\LWRphystrig {#1}{atan}}\)
+
+\(\renewcommand {\csc }[1][]{\LWRphystrig {#1}{csc}}\)
+
+\(\renewcommand {\csch }[1][]{\LWRphystrig {#1}{csch}}\)
+
+\(\renewcommand {\arccsc }[1][]{\LWRphystrig {#1}{arccsc}}\)
+
+\(\renewcommand {\acsc }[1][]{\LWRphystrig {#1}{acsc}}\)
+
+\(\renewcommand {\sec }[1][]{\LWRphystrig {#1}{sec}}\)
+
+\(\renewcommand {\sech }[1][]{\LWRphystrig {#1}{sech}}\)
+
+\(\renewcommand {\arcsec }[1][]{\LWRphystrig {#1}{arcsec}}\)
+
+\(\renewcommand {\asec }[1][]{\LWRphystrig {#1}{asec}}\)
+
+\(\renewcommand {\cot }[1][]{\LWRphystrig {#1}{cot}}\)
+
+\(\renewcommand {\coth }[1][]{\LWRphystrig {#1}{coth}}\)
+
+\(\renewcommand {\arccot }[1][]{\LWRphystrig {#1}{arccot}}\)
+
+\(\renewcommand {\acot }[1][]{\LWRphystrig {#1}{acot}}\)
+
+\(\require {cancel}\)
+
+\(\newcommand {\underuparrow }[1]{{\underset {\uparrow }{#1}}}\)
+
+\(\DeclareMathOperator *{\argmax }{argmax}\)
+
+\(\DeclareMathOperator *{\argmin }{arg\,min}\)
+
+\(\def \E [#1]{\mathbb {E}\!\left [ #1 \right ]}\)
+
+\(\def \Var [#1]{\operatorname {Var}\!\left [ #1 \right ]}\)
+
+\(\def \Cov [#1]{\operatorname {Cov}\!\left [ #1 \right ]}\)
+
+\(\newcommand {\floor }[1]{\lfloor #1 \rfloor }\)
+
+\(\newcommand {\DTFTH }{ H \brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DTFTX }{ X\brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DFTtr }[1]{\mathrm {DFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtr }[1]{\mathrm {DTFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtrI }[1]{\mathrm {DTFT^{-1}}\left \{#1\right \}}\)
+
+\(\newcommand {\Ftr }[1]{ \mathcal {F}\left \{#1\right \}}\)
+
+\(\newcommand {\FtrI }[1]{ \mathcal {F}^{-1}\left \{#1\right \}}\)
+
+\(\newcommand {\Zover }{\overset {\mathscr Z}{\Longleftrightarrow }}\)
+
+\(\renewcommand {\real }{\mathbb {R}}\)
+
+\(\newcommand {\ba }{\mathbf {a}}\)
+
+\(\newcommand {\bb }{\mathbf {b}}\)
+
+\(\newcommand {\bc }{\mathbf {c}}\)
+
+\(\newcommand {\bd }{\mathbf {d}}\)
+
+\(\newcommand {\be }{\mathbf {e}}\)
+
+\(\newcommand {\bf }{\mathbf {f}}\)
+
+\(\newcommand {\bg }{\mathbf {g}}\)
+
+\(\newcommand {\bh }{\mathbf {h}}\)
+
+\(\newcommand {\bi }{\mathbf {i}}\)
+
+\(\newcommand {\bn }{\mathbf {n}}\)
+
+\(\newcommand {\bo }{\mathbf {o}}\)
+
+\(\newcommand {\bp }{\mathbf {p}}\)
+
+\(\newcommand {\bq }{\mathbf {q}}\)
+
+\(\newcommand {\br }{\mathbf {r}}\)
+
+\(\newcommand {\bs }{\mathbf {s}}\)
+
+\(\newcommand {\bt }{\mathbf {t}}\)
+
+\(\newcommand {\bu }{\mathbf {u}}\)
+
+\(\newcommand {\bv }{\mathbf {v}}\)
+
+\(\newcommand {\bw }{\mathbf {w}}\)
+
+\(\newcommand {\bx }{\mathbf {x}}\)
+
+\(\newcommand {\bxx }{\mathbf {xx}}\)
+
+\(\newcommand {\bxy }{\mathbf {xy}}\)
+
+\(\newcommand {\by }{\mathbf {y}}\)
+
+\(\newcommand {\byx }{\mathbf {yx}}\)
+
+\(\newcommand {\byy }{\mathbf {yy}}\)
+
+\(\newcommand {\bz }{\mathbf {z}}\)
+
+\(\newcommand {\bA }{\mathbf {A}}\)
+
+\(\newcommand {\bB }{\mathbf {B}}\)
+
+\(\newcommand {\bC }{\mathbf {C}}\)
+
+\(\newcommand {\bD }{\mathbf {D}}\)
+
+\(\newcommand {\bH }{\mathbf {H}}\)
+
+\(\newcommand {\bI }{\mathbf {I}}\)
+
+\(\newcommand {\bK }{\mathbf {K}}\)
+
+\(\newcommand {\bM }{\mathbf {M}}\)
+
+\(\newcommand {\bP }{\mathbf {P}}\)
+
+\(\newcommand {\bQ }{\mathbf {Q}}\)
+
+\(\newcommand {\bR }{\mathbf {R}}\)
+
+\(\newcommand {\bS }{\mathbf {S}}\)
+
+\(\newcommand {\bU }{\mathbf {U}}\)
+
+\(\newcommand {\bW }{\mathbf {W}}\)
+
+\(\newcommand {\bX }{\mathbf {X}}\)
+
+\(\newcommand {\bY }{\mathbf {Y}}\)
+
+\(\newcommand {\bZ }{\mathbf {Z}}\)
+
+\(\newcommand {\balpha }{\bm {\alpha }}\)
+
+\(\newcommand {\bth }{{\bm {\theta }}}\)
+
+\(\newcommand {\bepsilon }{{\bm {\epsilon }}}\)
+
+\(\newcommand {\bmu }{{\bm {\mu }}}\)
+
+\(\newcommand {\bgamma }{{\bm {\gamma }}}\)
+
+\(\newcommand {\bphi }{\bm {\phi }}\)
+
+\(\newcommand {\bOne }{\mathbf {1}}\)
+
+\(\newcommand {\bZero }{\mathbf {0}}\)
+
+\(\newcommand {\indFunc }{\mathbb {1}}\)
+
+\(\newcommand {\btx }{\tilde {\bx }}\)
+
+\(\newcommand {\loss }{\mathcal {L}}\)
+
+\(\newcommand {\score }{\mathcal {S}}\)
+
+\(\newcommand {\SSE }{\mathrm {SSE}}\)
+
+\(\newcommand {\SST }{\mathrm {SST}}\)
+
+\(\newcommand {\SSR }{\mathrm {SSR}}\)
+
+\(\newcommand {\MSE }{\mathrm {MSE}}\)
+
+\(\newcommand {\RMSE }{\mathrm {RMSE}}\)
+
+\(\newcommand {\toprule }[1][]{\hline }\)
+
+\(\let \midrule \toprule \)
+
+\(\let \bottomrule \toprule \)
+
+\(\def \LWRbooktabscmidruleparen (#1)#2{}\)
+
+\(\newcommand {\LWRbooktabscmidrulenoparen }[1]{}\)
+
+\(\newcommand {\cmidrule }[1][]{\ifnextchar (\LWRbooktabscmidruleparen \LWRbooktabscmidrulenoparen }\)
+
+\(\newcommand {\morecmidrules }{}\)
+
+\(\newcommand {\specialrule }[3]{\hline }\)
+
+\(\newcommand {\addlinespace }[1][]{}\)
+
+\(\newcommand {\LWRsubmultirow }[2][]{#2}\)
+
+\(\newcommand {\LWRmultirow }[2][]{\LWRsubmultirow }\)
+
+\(\newcommand {\multirow }[2][]{\LWRmultirow }\)
+
+\(\newcommand {\mrowcell }{}\)
+
+\(\newcommand {\mcolrowcell }{}\)
+
+\(\newcommand {\STneed }[1]{}\)
+
+\(\newcommand {\tcbset }[1]{}\)
+
+\(\newcommand {\tcbsetforeverylayer }[1]{}\)
+
+\(\newcommand {\tcbox }[2][]{\boxed {\text {#2}}}\)
+
+\(\newcommand {\tcboxfit }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcblower }{}\)
+
+\(\newcommand {\tcbline }{}\)
+
+\(\newcommand {\tcbtitle }{}\)
+
+\(\newcommand {\tcbsubtitle [2][]{\mathrm {#2}}}\)
+
+\(\newcommand {\tcboxmath }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcbhighmath }[2][]{\boxed {#2}}\)
+
+\(\require {colortbl}\)
+
+\(\let \LWRorigcolumncolor \columncolor \)
+
+\(\renewcommand {\columncolor }[2][named]{\LWRorigcolumncolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigrowcolor \rowcolor \)
+
+\(\renewcommand {\rowcolor }[2][named]{\LWRorigrowcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigcellcolor \cellcolor \)
+
+\(\renewcommand {\cellcolor }[2][named]{\LWRorigcellcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+</div>
+
+<!--
+...... section Choosing the Encoding ......
+-->
+<h4 id="autosec-56"><span class="sectionnumber">6&#x2003;</span>Choosing the Encoding</h4>
+<a id="plotting-autopage-56"></a>
+<a id="plotting-autofile-6"></a>
+
+<a id="sec-app-plot-encoding"></a>
+
+<p>
+A chart maps numbers onto a visual channel, and the channels are not interchangeable. Their accuracy has been measured. The ranking is stable, and it is the most useful result in the field:
+</p>
+
+<ul class="enumerate" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">1.</span> position along a common scale;
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">2.</span> length;
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">3.</span> slope and angle;
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">4.</span> area;
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">5.</span> volume;
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">6.</span> shading and color strength;
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">7.</span> a different color.
+</p>
+</li>
+</ul>
+
+<p>
+Fig.&nbsp;<a href="node-6.html#fig-plot-encoding">6.1</a> puts one set of five values through the first six of these channels, one panel per entry, from panel&nbsp;(a) for the first to panel&nbsp;(f) for the sixth, so the
+ranking can be felt rather than taken on trust. The seventh has no panel here because it has no answer: a set of colors is a set of names, and names do not come in an order, so the ranking cannot be recovered at all. Only the
+dark-to-light part of a color can be ranked, which is the subject of Sec.&nbsp;<a href="node-5.html#sec-app-plot-colorspace">5.1</a>.
+</p>
+
+<figure id="autoid-21" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_encoding.svg" target="_blank" ><img
+    src="figs/plot_encoding.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;6.1: Five values, \(A\) to \(E\), encoded six ways, one panel per entry of the ranking above. Rank the categories from smallest to largest in each panel. The answer is \(A &lt; E &lt; C &lt; B &lt; D\) throughout.
+Panels (a) and (b) give it up immediately. Panels (c) to (e) take effort and invite errors between the close pair \(B\) and \(C\), and the two size channels differ in how much of the difference survives: \(D\) is three times \(A\), and
+its mark has three times the area in (d) and only \(2.1\) times in (e), where the value is a volume, so the radius of the ball and the edge of the cube both follow its cube root. Panel&nbsp;(f) cannot be done reliably at all.
+
+</div>
+
+<a id="fig-plot-encoding"></a>
+
+</div>
+
+</figure>
+
+<p>
+Three consequences follow, and they account for most of the chart-type advice in circulation.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:              #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:                1px solid #BF6000; background:         #BF6000; color:     #FFFFFF; "
+>
+
+<p>
+Bar, line and scatter
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Bar, line and scatter are the workhorses. They occupy the top of the ranking. There is rarely a reason to reach past them for quantitative data.
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Case Study: Pie and 3D plots ......
+-->
+<h5 id="autosec-58"><span class="sectionnumber">6.1&#x2003;</span>Case Study: Pie and 3D plots</h5>
+<a id="plotting-autopage-58"></a>
+
+
+<a id="sec-app-plot-pie"></a>
+<!--
+......   paragraph Pie charts encode angle and area ......
+-->
+
+
+<p>
+<span class="paragraph" id="autosec-59">Pie charts encode angle and area</span>
+<a id="plotting-autopage-59"></a>
+Both sit low in the ranking, which is why comparing two slices of similar size is guesswork, and why a pie with more than three slices cannot be ordered by eye. The same numbers as a sorted bar chart are read exactly, in the same
+space.
+</p>
+<!--
+......   paragraph Three dimensions on a flat page cost accuracy and buy nothing ......
+-->
+
+
+<p>
+<span class="paragraph" id="autosec-60">Three dimensions on a flat page cost accuracy and buy nothing</span>
+<a id="plotting-autopage-60"></a>
+A 3D bar chart replaces length, which is second in the ranking, with volume under projection, which is fifth, and adds occlusion so that some bars hide others. Adding perspective makes it worse than guesswork: tilting the pie
+shrinks the back slices and enlarges the front ones, so the picture is no longer even a faithful rendering of the angles.
+</p>
+
+<p>
+Both paragraphs above can be checked on one set of numbers. Fig.&nbsp;<a href="node-6.html#fig-plot-pie">6.2</a> takes the five values \(37\), \(36\), \(24\), \(2\) and \(1\) through the four charts a spreadsheet offers
+for them. The two largest differ by one part in a hundred, and that difference is the test: every panel contains it, and one panel shows it.
+</p>
+
+<figure id="autoid-22" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_pie.svg" target="_blank" ><img
+    src="figs/plot_pie.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;6.2: Five values, \(A=37\), \(B=36\), \(C=24\), \(D=2\), \(E=1\), drawn four ways. (a) A pie: \(A\) and \(B\) differ by \(3.6^{\circ }\) of arc out of \(360^{\circ }\), so the two cannot be ordered, and the slivers
+\(D\) and \(E\) need leaders to be labeled at all. (b) The same pie tilted by \(28^{\circ }\): \(B\) lies at the front and collects the slab wall, so it is drawn with \(1.27\) times the apparent area of \(A\) although it is the smaller
+value. (c) The same values as 3D bars: the front bar tops reads between \(7\) and \(11\) units low, which distorts the differences as well as the values. (d) Sorted bars with the values printed: the ranking is immediate and the
+numbers are exact.
+
+</div>
+
+<a id="fig-plot-pie"></a>
+
+</div>
+
+</figure>
+
+<p>
+Panel&nbsp;(d) is not a more careful version of the others, it is a different encoding. It reads the values as length from a common baseline, second in the ranking, while (a) and (b) read them as angle and area, third and fourth, and
+(c) reads them as a height that has to be carried across a gap in depth before it meets a scale.
+</p>
+<!--
+...... subsection Case Study: Three variables on a flat page ......
+-->
+<h5 id="autosec-62"><span class="sectionnumber">6.2&#x2003;</span>Case Study: Three variables on a flat page</h5>
+<a id="plotting-autopage-62"></a>
+
+
+<a id="sec-app-plot-thirdvar"></a>
+
+<p>
+Two variables get the two axes. A third has to go into a channel, and which channel is the whole question, because the ranking above is the answer to it. Fig.&nbsp;<a href="node-6.html#fig-plot-thirdvar">6.3</a> takes one
+record of forty training runs, each with a model size, a training set size and the accuracy it reached, and moves the training set size through four channels, one per panel. The reader is meant to take off the page that model size
+stops paying past about ten million parameters and training set size does not, so which of the two is worth the next budget.
+</p>
+
+<figure id="autoid-23" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_thirdvar.svg" target="_blank" ><img
+    src="figs/plot_thirdvar.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;6.3: Three variables. (a) All three as a 3D scatter. (b) The training set as marker area. (c) The training set as color, on <kbd>viridis</kbd> with a colorbar. (d) The training set on the horizontal axis, model size as
+three bins in color (Okabe-Ito scheme) and marker shape at once.
+
+</div>
+
+<a id="fig-plot-thirdvar"></a>
+
+</div>
+
+</figure>
+
+<p>
+The four panels are four entries of the ranking, and they come out in its order.
+</p>
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> Panel&nbsp;(a) is not on the ranking at all: a projected point has no depth to decode, which is the argument of Sec.&nbsp;<a href="node-6.html#sec-app-plot-pie">6.1</a> moved from
+a pie to a scatter.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Panel&nbsp;(b) reads it as area, fourth.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Panel&nbsp;(c) reads it as color strength, sixth, which supports <i>more</i> and <i>less</i> and stops there.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Panel&nbsp;(d) reads the third variable as position on a common scale, first, which is why the number the question turns on is read off an axis instead of estimated.
+</p>
+</li>
+</ul>
+
+<p>
+Note (d) carries model size in two channels at once, color and marker shape.
+</p>
+<!--
+...... subsection Case Study: Radar charts ......
+-->
+<h5 id="autosec-64"><span class="sectionnumber">6.3&#x2003;</span>Case Study: Radar charts</h5>
+<a id="plotting-autopage-64"></a>
+
+
+<a id="sec-app-plot-radar"></a>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #9999FF; border-bottom:               1px solid #9999FF; background:        #9999FF; color:      #FFFFFF; "
+>
+
+<p>
+Radar chart
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A <em>radar chart</em>, also called a spider or a web chart, places \(k\) categories at \(k\) equally spaced angles, draws each value as a radius along its own spoke, and joins the ends into a closed polygon. The angle is a
+<i>slot</i> rather than a quantity, which is what separates it from a polar plot: there the angle carries a direction, a phase or a time of day, and none of what follows applies.
+</p>
+</div>
+
+</div>
+
+<p>
+The form has one honest use and it is narrow: a small number of profiles, measured on axes that genuinely share a scale, read for their shape rather than for their values. Every attribute is scored by the same panel on the same
+scale, so the radial axis means one thing on every spoke. Fig.&nbsp;<a href="node-6.html#fig-plot-radar">6.4</a> takes one such record, four samples scored on six attributes, draws it in the form the chart usually takes, and
+measures beside it what that form does to the levels.
+</p>
+
+<figure id="autoid-24" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_radar.svg" target="_blank" ><img
+    src="figs/plot_radar.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;6.4: One synthetic sensory record: four samples, six attributes, every attribute scored on the same \(9\)-point scale, drawn as a radar chart and measured against it. (a) All four filled at \(\alpha = 0.35\) on a radial
+axis starting at \(4\). The cut removes the inner \(44\,\%\) of every radius and takes the apparent area of sample C; the fills occlude one another in the order they were drawn. (b) The cost of that encoding, as a length: for each
+sample, the true level, its mean score relative to the control, beside the level the polygon area of panel&nbsp;(a) makes the reader perceive, both on a zero baseline.
+
+</div>
+
+<a id="fig-plot-radar"></a>
+
+</div>
+
+</figure>
+
+<p>
+Panel&nbsp;(b) measures what panel&nbsp;(a) costs. The gray bar is what a sample scored, the blue bar is the level its polygon in panel&nbsp;(a) makes the reader perceive. The gap between the two is contributed by the encoding
+rather than by the data: nothing on panel&nbsp;(a) discloses that they differ. The gap widens with the drop, from \(0.09\) for sample A to \(0.42\) for sample C, so the chart is least trustworthy exactly where the finding is.
+</p>
+
+<p>
+What panel&nbsp;(a) does wrong follows from what the polygon is. Its area on \(k\) equally spaced spokes with radii \(r_1,\dots ,r_k\) is
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{0}\)</span>
+
+<!--
+
+                                                                                    X k
+                                                                              1     2π
+                                                                    Apoly =     sin        ri ri+1 ,    rk+1 = r1 ,                                                                 (6.1)--><a id="eq-plot-radar-area"></a><!--
+                                                                              2      k i=1
+
+-->
+
+<p>
+
+\begin{equation}
+A_{\mathrm {poly}} = \frac {1}{2}\sin \!\left (\frac {2\pi }{k}\right )\sum _{i=1}^{k} r_i\,r_{i+1}, \qquad r_{k+1} = r_1 , \label {eq-plot-radar-area}
+\end{equation}
+
+</p>
+
+<p>
+and two properties of that expression decide how the chart reads.
+</p>
+
+<p>
+<em>The area is quadratic in the values.</em> The eye compares the filled shapes and not the radii. Sample C scores \(0.803\) of the control level and its polygon covers \(0.646\) of the control area, which overstates the drop by a
+factor of \(1.80\); that comparison is the pair of bars panel&nbsp;(b) draws. That is the exaggeration of a cut bar chart (Sec.&nbsp;<a href="node-7.html#sec-app-plot-axes">7</a>) in a form no axis label discloses.
+</p>
+
+<p>
+<em>The area depends on the order of the spokes.</em> Eq.&nbsp;<span class="textup">(<a href="node-6.html#eq-plot-radar-area">6.1</a>)</span> pairs adjacent radii only, so permuting the axes changes it without
+changing a number. On this record the effect is small. The ordering is a choice the author makes and the reader cannot see.
+</p>
+
+<p>
+The fix for panel&nbsp;(a) is not a better radar chart. The same \(24\) numbers as a dot plot, one row per attribute and one marker per sample on a shared horizontal scale, drawn in Fig.&nbsp;<a
+href="node-6.html#fig-plot-radar-good">6.5</a>(b), put all of them at the top of the ranking of Sec.&nbsp;<a href="node-6.html#sec-app-plot-encoding">6</a>: the largest difference in the record, \(2.3\) points of
+texture between the control and sample&nbsp;C, becomes a length rather than a shape. It also settles the comparison the radar chart cannot serve at all. Two attributes of one sample sit on one scale in a dot plot; on a radar chart
+they sit in two different directions.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:              #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:                1px solid #BF6000; background:         #BF6000; color:     #FFFFFF; "
+>
+
+<p>
+If you draw one
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+One zero-anchored scale on every spoke, and name it. Two profiles at most, or one per panel as small multiples (Sec.&nbsp;<a href="node-7.html#sec-app-plot-many">7.6</a>). Fill one polygon or none. And say what fixes the
+axis order, because Eq.&nbsp;<span class="textup">(<a href="node-6.html#eq-plot-radar-area">6.1</a>)</span> says the picture depends on it.
+</p>
+</div>
+
+</div>
+
+<p>
+Fig.&nbsp;<a href="node-6.html#fig-plot-radar-good">6.5</a>(a) is that box applied to the record of Fig.&nbsp;<a href="node-6.html#fig-plot-radar">6.4</a>, and panel&nbsp;(b) is the dot plot beside it.
+Panel&nbsp;(a) is as good as the form gets, and it is still the weaker of the two. Anchoring the radial axis at zero fixes the baseline and nothing else: by Eq.&nbsp;<span class="textup">(<a
+href="node-6.html#eq-plot-radar-area">6.1</a>)</span> the area stays quadratic in the scores, so sample&nbsp;C keeps \(0.803\) of the control level and \(0.646\) of the area, the same factor of \(1.80\) as before; the
+spoke order still moves the picture; and the finding of the record is a difference between two radii in (a) where panel&nbsp;(b) makes it a length on one scale.
+</p>
+
+<figure id="autoid-25" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_radar_good.svg" target="_blank" ><img
+    src="figs/plot_radar_good.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;6.5: The record of Fig.&nbsp;<a href="node-6.html#fig-plot-radar">6.4</a>, drawn under the rules of the box and then not drawn as a radar chart at all. (a) Two profiles rather than four, every spoke
+starting at \(0\) on the named \(9\)-point scale, one polygon filled, and the spokes in the order the questionnaire asks them, which is the order that is not chosen for how the polygon comes out. (b) The same \(24\)
+numbers as a dot plot, one row per attribute, sorted by the gap against the control, the sample carried by color and marker shape at once so that the panel survives a gray print and a deficiency simulation (Sec.&nbsp;<a
+href="node-5.html#sec-app-plot-checks">5.5</a>). The finding, \(2.3\) points of texture between the control and sample&nbsp;C, is the arrow in (b) and a comparison of two directions in (a).
+
+</div>
+
+<a id="fig-plot-radar-good"></a>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #B20000; background:          #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #B20000; border-bottom:           1px solid #B20000; background:      #B20000; color:     #FFFFFF; "
+>
+
+<p>
+Do not normalize the axes into agreement
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Do not normalize the axes into agreement.
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Case Study: Plot matrix ......
+-->
+<h5 id="autosec-67"><span class="sectionnumber">6.4&#x2003;</span>Case Study: Plot matrix</h5>
+<a id="plotting-autopage-67"></a>
+
+
+<a id="sec-app-plot-matrix"></a>
+
+<p>
+A <em>relation</em> is an \(n \times n\) table whose entry \((i,j)\) describes the <i>pair</i> rather than a single item: confusion matrices, correlation and distance matrices, and more. The default rendering for all of them is
+a colored grid, which encodes the value as shading, sixth in the ranking above.
+</p>
+<div class="amsthmbodygoal">
+
+<ul class="list" style="list-style-type:none">
+
+
+<li>
+<p>
+<span class="listmarker"><a id="plotting-autopage-68"></a>
+<b>Goal:</b> </span> Draw a relation for the comparison it was measured to make. Here cell \((i,j)\) is the accuracy of a classifier trained on channel \(i\) and tested on channel \(j\), and the comparison is against the target
+channel’s own model, on the diagonal.
+</p>
+
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Fig.&nbsp;<a href="node-6.html#fig-plot-matrix-raw">6.6</a>(a) is the grid as its script produced it, from the single line <kbd>imshow(M, cmap=’viridis’, vmin=M.min(), vmax=M.max())</kbd>. The map is stretched
+across the observed range, \(0.875\) to \(0.926\), so the entire excursion from deepest purple to full yellow is \(5.1\) points of accuracy, and no colorbar reports it.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:                #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:                 1px solid #BF6000; background:      #BF6000; color:      #FFFFFF; "
+>
+
+<p>
+Colorbar
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A colormap fitted to the data range, with no colorbar to disclose it, is an error to fix.
+</p>
+</div>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #B20000; background:                #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #B20000; border-bottom:                 1px solid #B20000; background:      #B20000; color:      #FFFFFF; "
+>
+
+<p>
+Scaling
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> <kbd>vmin=M.min()</kbd> is the cut baseline of Fig.&nbsp;<a href="node-7.html#fig-plot-baseline">7.1</a>(a) moved into color: the scale is pinned to the data rather than to a
+meaningful zero, so every apparent difference is inflated by an amount the reader cannot detect. Subtract the reference before you color it!
+</p>
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Switch the text color on the gray level of the cell rather than on the value.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Do not re-encode the diagonal, which position already identifies; define every glyph, since an asterisk without a key is a legend without a key.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> The ordering rule of Sec.&nbsp;<a href="node-4.html#sec-app-plot-lookup">4.1</a>.
+</p>
+</li>
+</ul>
+
+</div>
+
+</div>
+
+<p>
+The comparison the grid is being asked to support is between each transfer and the target channel’s own model, and there are two ways to make it: show that reference, or subtract it. Panels&nbsp;(b) and&nbsp;(c) show it. They
+keep the accuracies exactly as they were measured and mark each target’s own model beside them, so the shortfall is a distance on the page rather than a number the script arrived at, and the level of the results survives. That level
+is what ch&nbsp;\(3\)’s row is for: a model transferred into ch&nbsp;\(3\) is the least accurate destination of the four, \(0.8772\) against \(0.8928\) into ch&nbsp;\(2\).
+</p>
+
+<figure id="autoid-26" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_matrix_raw.svg" target="_blank" ><img
+    src="figs/plot_matrix_raw.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;6.6: One \(4 \times 4\) cross-channel record, as it was measured. (a) As produced: <kbd>viridis</kbd> stretched over the observed range \(0.875\) to \(0.926\), no colorbar, the diagonal in bold, an unkeyed
+asterisk. (b) One row per target channel, three dots in it, one per model transferred in, each joined to the dark rule of that channel’s own model. The segment is the loss the next figure computes, here a length on the page and
+nothing else. Ch&nbsp;\(3\)’s whole row, rule included, sits left of the others. (c) The same twelve, sorted and named; the open markers are the three closest transfers. The axis is cut, which points allow and bars do not.
+
+</div>
+
+<a id="fig-plot-matrix-raw"></a>
+
+</div>
+
+</figure>
+
+<p>
+The two panels are not equally successful, and the reason is the reference. Panel&nbsp;(b) draws each of the four references once, so the levels are visible as levels and ch&nbsp;\(3\)’s rule at \(0.900\), against \(0.921\) to
+\(0.926\) for the others, is the finding. Panel&nbsp;(c) draws the same four references twelve times, in whatever order the sort produces; and by sorting on the segment it turns the shortfall into a length measured from twelve
+different starting points. Sort by a difference only when the marks that carry it start together, which is what a common zero gives and what the next figure draws.
+</p>
+
+<p>
+Subtracting the reference is the other way. The quantity the argument turns on is then not the accuracy but the loss against that reference,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{6.}{1}\)</span>
+
+<!--
+
+
+                                                                                                            ∆ij = ajj − aij ,                                                          (6.2)--><a id="eq-plot-matrix-gap"></a><!--
+
+-->
+
+<p>
+
+\begin{equation}
+\Delta _{ij} = a_{jj} - a_{ij}, \label {eq-plot-matrix-gap}
+\end{equation}
+
+</p>
+
+<p>
+where \(a_{ij}\) is the entry of the grid, the accuracy of a classifier trained on channel&nbsp;\(i\) and tested on channel&nbsp;\(j\): the row index&nbsp;\(i\) is the source the model was trained on, the column
+index&nbsp;\(j\) is the target it is tested on, and \(a_{jj}\) on the diagonal is the target’s own model, the reference every entry of column&nbsp;\(j\) is measured against. The loss is therefore zero on the diagonal by
+construction. Fig.&nbsp;<a href="node-6.html#fig-plot-matrix">6.7</a>(a) draws the same numbers as \(\Delta \), anchored at zero. The row reading survives, the column reading inverts: column&nbsp;\(3\) is the darkest
+of Fig.&nbsp;<a href="node-6.html#fig-plot-matrix-raw">6.6</a>(a), yet its mean loss of \(0.0228\) is the <i>smallest</i> of the four. What is dark in that column is ch&nbsp;\(3\)’s own model, \(0.900\) against
+\(0.921\) to \(0.926\), reported by the raw matrix as though it were the effect. Ch&nbsp;\(3\) is at once the easiest target and the least accurate destination, and it takes both figures to say so: the loss alone cannot state a level,
+and the accuracies alone do not isolate the reference.
+</p>
+
+<figure id="autoid-27" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_matrix.svg" target="_blank" ><img
+    src="figs/plot_matrix.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;6.7: The same record as the loss \(\Delta _{ij}\) of Eq.&nbsp;<span class="textup">(<a href="node-6.html#eq-plot-matrix-gap">6.2</a>)</span>, read four ways. (a) The loss anchored at zero, the row and
+column means in the margin band. (b) The same layout with the fill replaced by a mark whose area carries the loss and the value printed under it; the three closest transfers are the open rings, and the largest loss is \(7.6\) times
+the smallest, which is \(7.6\) times the area of its mark and \(2.7\) times its diameter. (c) One point per pair, its two directions its two coordinates, the lower-indexed source on the horizontal axis; the shaded band holds the three
+closest transfers, so a point inside it has a direction among them, and \(\{1,2\}\), inside both arms, transfers well each way. (d) The same twelve losses on a common scale, sorted.
+
+</div>
+
+<a id="fig-plot-matrix"></a>
+
+</div>
+
+</figure>
+
+<p>
+Panel&nbsp;(b) keeps the layout of (a) and changes the mark. The loss becomes the area of a circle, fourth in the ranking of Sec.&nbsp;<a href="node-6.html#sec-app-plot-encoding">6</a> where shading is sixth, and three
+things follow from that alone. No cell is judged against the shade of its neighbors, which is what Sec.&nbsp;<a href="node-5.html#sec-app-plot-context">5.2</a> says a filled grid cannot avoid. An exact zero draws nothing, so
+the diagonal empties itself rather than having to be blanked. And the panel needs no colorbar, because the value is printed under every mark, which is what a magnitude channel owes the reader in place of a key. What the area
+gives up is precision: the largest loss is \(7.6\) times the smallest, so its mark has \(7.6\) times the area and only \(2.7\) times the diameter, which is the length the eye compares.
+</p>
+
+<p>
+Panels&nbsp;(c) and&nbsp;(d) put the same twelve losses at the top of the ranking, as position on a common scale. Panel&nbsp;(c) also answers what a grid invites and no reader performs, whether the relation is symmetric. It is
+not.
+</p>
+
+<p>
+Circle area is not the only mark that frees a cell of its fill. Fig.&nbsp;<a href="node-6.html#fig-plot-matrix-forms">6.8</a> keeps the layout and runs it through four of them. Only length can be ranked by eye.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:              #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:               1px solid #BF6000; background:         #BF6000; color:      #FFFFFF; "
+>
+
+<p>
+Every magnitude channel needs a zero and a key
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Shading, area and stroke width are all magnitude channels, and each needs a zero the scale is anchored to, and a key on the page stating what one unit of the mark is worth.
+</p>
+</div>
+
+</div>
+
+<figure id="autoid-28" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_matrix_forms.svg" target="_blank" ><img
+    src="figs/plot_matrix_forms.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;6.8: One matrix of losses, four marks, one cell size, one key per panel. (a) The Hinton diagram, square area, and (b) the bubble grid, circle area, both 4<sup>th</sup> in the ranking: an exact zero draws nothing, so the
+diagonal disappears without being told to, and (b) leaves color free for a second variable, here the three closest transfers. (c) The <kbd>corrplot</kbd> ellipse, eccentricity, third, built for a signed bounded quantity, so the largest
+mark of the panel lands on the diagonal. Difference between diagonal circiles is indistingushable. (d) The bar in cell, length from a common baseline, second, the only panel that can be ranked by eye. The extremes differ by a factor
+of \(7.6\), which is \(7.6\) times the area and \(2.7\) times the side.
+
+</div>
+
+<a id="fig-plot-matrix-forms"></a>
+
+</div>
+
+</figure>
+
+</section>
+
+</main>
+
+
+<nav class="botnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+
+</div><!-- grid -->
+</body>
+</html>

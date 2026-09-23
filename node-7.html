@@ -1,0 +1,1893 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Dima Bykhovsky" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Plotting for engineers: visual perception, color and colormaps, choosing the encoding, axes, fonts, transparency, and figures inside a document." />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Axes — Plotting</title>
+<link rel="stylesheet" type="text/css" href="lwarp_academic.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+     subequations: "0",
+     section: "",
+     loader: {
+          load: ['[tex]/tagformat', '[tex]/textmacros'],
+     },
+     startup: {
+          ready() {
+              //       These would be replaced by import commands if you wanted to make
+              //       a proper extension.
+              const Configuration = MathJax._.input.tex.Configuration.Configuration;
+              const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+              const Macro = MathJax._.input.tex.Symbol.Macro;
+              const TexError = MathJax._.input.tex.TexError.default;
+              const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+              const expandable = MathJax._.util.Options.expandable;
+
+
+              //       Insert the replacement string into the TeX string, and check
+              //       that there haven't been too many maxro substitutions (prevents
+              //       infinite loops).
+              const useArgument = (parser, text) => {
+                   parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                   parser.i = 0;
+                   if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                        throw new TexError('MaxMacroSub1',
+                        'MathJax maximum macro substitution count exceeded; ' +
+                        'is there a recursive macro call?');
+                   }
+              }
+
+
+              //       Create the command map for:
+              //            \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+              new CommandMap('Lwarp-macros', {
+                   ifstar: 'IfstarFunction',
+                   ifnextchar: 'IfnextcharFunction',
+                   ifblank: 'IfblankFunction',
+                   ifstrequal: 'IfstrequalFunction',
+                   gsubstitute: 'GsubstituteFunction',
+                   seteqnumber: 'SeteqnumberFunction'
+              }, {
+                   //       This function implements an ifstar macro.
+                   IfstarFunction(parser, name) {
+                        const resultstar = parser.GetArgument(name);
+                        const resultnostar = parser.GetArgument(name);
+                        const star = parser.GetStar();                        // true if there is a *
+                        useArgument(parser, star ? resultstar : resultnostar);
+                   },
+
+
+                   //       This function implements an ifnextchar macro.
+                   IfnextcharFunction(parser, name) {
+                        let whichchar = parser.GetArgument(name);
+                        if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                            // $ syntax highlighting
+                            whichchar = String.fromCodePoint(parseInt(whichchar));
+                        }
+                        const resultnextchar = parser.GetArgument(name);
+                        const resultnotnextchar = parser.GetArgument(name);
+                        const gotchar = (parser.GetNext() === whichchar);
+                        useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                   },
+
+
+                   // This function implements an ifblank macro.
+                   IfblankFunction(parser, name) {
+                        const blankarg = parser.GetArgument(name);
+                        const resultblank = parser.GetArgument(name);
+                        const resultnotblank = parser.GetArgument(name);
+                        const isblank = (blankarg.trim() == "");
+                        useArgument(parser, isblank ? resultblank : resultnotblank);
+                   },
+
+
+                   // This function implements an ifstrequal macro.
+                   IfstrequalFunction(parser, name) {
+                        const strequalfirst = parser.GetArgument(name);
+                        const strequalsecond = parser.GetArgument(name);
+                        const resultequal = parser.GetArgument(name);
+                        const resultnotequal = parser.GetArgument(name);
+                        const isequal = (strequalfirst == strequalsecond);
+                        useArgument(parser, isequal ? resultequal : resultnotequal);
+                   },
+
+
+                   // This function implements a gsub macro.
+                   GsubstituteFunction(parser, name) {
+                        const gsubfirst = parser.GetArgument(name);
+                        const gsubsecond = parser.GetArgument(name);
+                        const gsubthird = parser.GetArgument(name);
+                        let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                        useArgument(parser, gsubresult);
+                   },
+
+
+                   //       This function modifies the equation numbers.
+                   SeteqnumberFunction(parser, name) {
+                            //   Get the macro parameters
+                            const star = parser.GetStar();                      // true if there is a *
+                            const optBrackets = parser.GetBrackets(name);        // contents of optional brackets
+                            const newsubequations = parser.GetArgument(name);      // the subequations argument
+                            const neweqsection = parser.GetArgument(name);      // the eq section argument
+                            const neweqnumber = parser.GetArgument(name);        // the eq number argument
+                            MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                            MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                            parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                   }
+
+
+              });
+
+
+              //       Create the Lwarp-macros package
+              Configuration.create('Lwarp-macros', {
+                   handler: {macro: ['Lwarp-macros']}
+              });
+
+
+              MathJax.startup.defaultReady();
+
+
+              // For forward references:
+              MathJax.startup.input[0].preFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            MathJax.config.subequations = math.inputData.recompile.subequations;
+                            MathJax.config.section = math.inputData.recompile.section;
+                   }
+              });
+              MathJax.startup.input[0].postFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            math.inputData.recompile.subequations = MathJax.config.subequations;
+                            math.inputData.recompile.section = MathJax.config.section;
+                   }
+              });
+
+
+                   // For \left, \right with unicode-math:
+                   const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                   const {Symbol} = MathJax._.input.tex.Symbol;
+                   const {MapHandler} = MathJax._.input.tex.MapHandler;
+                   const delimiter = MapHandler.getMap('delimiter');
+                   delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                   delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                   delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                   delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                   delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                   delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                   delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                   delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                   delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                   delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                   delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                   delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                   delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                   delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                   delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                   delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                   delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                   delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                   delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                   delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                   delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                   delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                   delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                   delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                   delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                   delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                   delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                   delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                   delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                   delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                   delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                   delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                   delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                   delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                   delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                   delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                   delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                   delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                   delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+          }       // ready
+     },            // startup
+
+
+     tex: {
+          packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+          tags: "ams",
+                   tagformat: {
+                            number: function (n) {
+                                 if(MathJax.config.subequations==0)
+                                        return(MathJax.config.section + n);
+                                 else
+                                        return(MathJax.config.section + String.fromCharCode(96+n));
+                            },
+                   },
+     }
+}
+</script>
+
+
+<script
+          id="MathJax-script"
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="plotting-autopage-72"></a>
+<div class="pagegrid">
+
+
+<nav class="topnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+<div class="sidetoccontainer">
+
+
+<nav class="sidetoc">
+
+
+<div class="sidetoctitle">
+
+<p>
+<span class="sidetocthetitle">Plotting</span>
+</p>
+
+<p>
+Contents
+</p>
+</div>
+
+
+<div class="sidetoccontents">
+
+<p>
+<a href="index.html" class="linkhome" >
+Home</a>
+</p>
+
+<p>
+<a href="node-1.html#autosec-7" class="tocsection" >
+<span class="sectionnumber">1</span>&#x2003;Preface</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-9" class="tocsection" >
+<span class="sectionnumber">2</span>&#x2003;A Chart That Cost a Space Vehicle</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-10" class="tocsubsection" >
+<span class="sectionnumber">2.1</span>&#x2003;The Story</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-12" class="tocsubsection" >
+<span class="sectionnumber">2.2</span>&#x2003;The same data on axes</a>
+</p>
+
+
+<p>
+<a href="node-3.html#autosec-15" class="tocsection" >
+<span class="sectionnumber">3</span>&#x2003;Why Plot at All</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-19" class="tocsection" >
+<span class="sectionnumber">4</span>&#x2003;What the Eye Does for Free</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-23" class="tocsubsection" >
+<span class="sectionnumber">4.1</span>&#x2003;Two ways a graph is read</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-27" class="tocsection" >
+<span class="sectionnumber">5</span>&#x2003;Color</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-28" class="tocsubsection" >
+<span class="sectionnumber">5.1</span>&#x2003;Which part of a color can be ranked</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-31" class="tocsubsection" >
+<span class="sectionnumber">5.2</span>&#x2003;Color and grayscale are judged in context</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-33" class="tocsubsection" >
+<span class="sectionnumber">5.3</span>&#x2003;Colormaps</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-39" class="tocsubsection" >
+<span class="sectionnumber">5.4</span>&#x2003;Schemes</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-44" class="tocsubsection" >
+<span class="sectionnumber">5.5</span>&#x2003;Color deficiency</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-50" class="tocsubsection" >
+<span class="sectionnumber">5.6</span>&#x2003;Color Meaning</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-56" class="tocsection" >
+<span class="sectionnumber">6</span>&#x2003;Choosing the Encoding</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-58" class="tocsubsection" >
+<span class="sectionnumber">6.1</span>&#x2003;Case Study: Pie and 3D plots</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-62" class="tocsubsection" >
+<span class="sectionnumber">6.2</span>&#x2003;Case Study: Three variables on a flat page</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-64" class="tocsubsection" >
+<span class="sectionnumber">6.3</span>&#x2003;Case Study: Radar charts</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-67" class="tocsubsection" >
+<span class="sectionnumber">6.4</span>&#x2003;Case Study: Plot matrix</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-73" class="tocsection" >
+<span class="sectionnumber">7</span>&#x2003;Axes</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-74" class="tocsubsection" >
+<span class="sectionnumber">7.1</span>&#x2003;The zero baseline</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-77" class="tocsubsection" >
+<span class="sectionnumber">7.2</span>&#x2003;Cumulative totals</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-79" class="tocsubsection" >
+<span class="sectionnumber">7.3</span>&#x2003;Aspect ratio</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-81" class="tocsubsection" >
+<span class="sectionnumber">7.4</span>&#x2003;Ticks and labels</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-84" class="tocsubsection" >
+<span class="sectionnumber">7.5</span>&#x2003;Legends</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-87" class="tocsubsection" >
+<span class="sectionnumber">7.6</span>&#x2003;Many plots at once</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-90" class="tocsubsection" >
+<span class="sectionnumber">7.7</span>&#x2003;Close-ups</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-92" class="tocsubsection" >
+<span class="sectionnumber">7.8</span>&#x2003;Size and gridlines</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-96" class="tocsubsection" >
+<span class="sectionnumber">7.9</span>&#x2003;Logarithmic Axes</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-99" class="tocsection" >
+<span class="sectionnumber">8</span>&#x2003;Choosing a Font</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-100" class="tocsubsection" >
+<span class="sectionnumber">8.1</span>&#x2003;Figure size sets the text size</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-102" class="tocsubsection" >
+<span class="sectionnumber">8.2</span>&#x2003;The three kinds of face</a>
+</p>
+
+
+<p>
+<a href="node-9.html#autosec-108" class="tocsection" >
+<span class="sectionnumber">9</span>&#x2003;How a Reader Groups Marks</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-112" class="tocsection" >
+<span class="sectionnumber">10</span>&#x2003;Transparency</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-113" class="tocsubsection" >
+<span class="sectionnumber">10.1</span>&#x2003;Misuse</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-115" class="tocsubsection" >
+<span class="sectionnumber">10.2</span>&#x2003;Accumulation</a>
+</p>
+
+
+<p>
+<a href="node-11.html#autosec-119" class="tocsection" >
+<span class="sectionnumber">11</span>&#x2003;Ink That Carries No Data</a>
+</p>
+
+
+<p>
+<a href="node-12.html#autosec-122" class="tocsection" >
+<span class="sectionnumber">12</span>&#x2003;Figures Inside a Document</a>
+</p>
+
+
+</div>
+
+</nav>
+
+</div>
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<h1>Plotting</h1>
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+    style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\( \newcommand {\abs }[1]{\lvert #1\rvert } \)
+
+\( \DeclareMathOperator {\sign }{sign} \)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\newcommand {\bm }[1]{\boldsymbol {#1}}\)
+
+\(\require {physics}\)
+
+\(\newcommand {\LWRphystrig }[2]{\ifblank {#1}{\textrm {#2}}{\textrm {#2}^{#1}}}\)
+
+\(\renewcommand {\sin }[1][]{\LWRphystrig {#1}{sin}}\)
+
+\(\renewcommand {\sinh }[1][]{\LWRphystrig {#1}{sinh}}\)
+
+\(\renewcommand {\arcsin }[1][]{\LWRphystrig {#1}{arcsin}}\)
+
+\(\renewcommand {\asin }[1][]{\LWRphystrig {#1}{asin}}\)
+
+\(\renewcommand {\cos }[1][]{\LWRphystrig {#1}{cos}}\)
+
+\(\renewcommand {\cosh }[1][]{\LWRphystrig {#1}{cosh}}\)
+
+\(\renewcommand {\arccos }[1][]{\LWRphystrig {#1}{arcos}}\)
+
+\(\renewcommand {\acos }[1][]{\LWRphystrig {#1}{acos}}\)
+
+\(\renewcommand {\tan }[1][]{\LWRphystrig {#1}{tan}}\)
+
+\(\renewcommand {\tanh }[1][]{\LWRphystrig {#1}{tanh}}\)
+
+\(\renewcommand {\arctan }[1][]{\LWRphystrig {#1}{arctan}}\)
+
+\(\renewcommand {\atan }[1][]{\LWRphystrig {#1}{atan}}\)
+
+\(\renewcommand {\csc }[1][]{\LWRphystrig {#1}{csc}}\)
+
+\(\renewcommand {\csch }[1][]{\LWRphystrig {#1}{csch}}\)
+
+\(\renewcommand {\arccsc }[1][]{\LWRphystrig {#1}{arccsc}}\)
+
+\(\renewcommand {\acsc }[1][]{\LWRphystrig {#1}{acsc}}\)
+
+\(\renewcommand {\sec }[1][]{\LWRphystrig {#1}{sec}}\)
+
+\(\renewcommand {\sech }[1][]{\LWRphystrig {#1}{sech}}\)
+
+\(\renewcommand {\arcsec }[1][]{\LWRphystrig {#1}{arcsec}}\)
+
+\(\renewcommand {\asec }[1][]{\LWRphystrig {#1}{asec}}\)
+
+\(\renewcommand {\cot }[1][]{\LWRphystrig {#1}{cot}}\)
+
+\(\renewcommand {\coth }[1][]{\LWRphystrig {#1}{coth}}\)
+
+\(\renewcommand {\arccot }[1][]{\LWRphystrig {#1}{arccot}}\)
+
+\(\renewcommand {\acot }[1][]{\LWRphystrig {#1}{acot}}\)
+
+\(\require {cancel}\)
+
+\(\newcommand {\underuparrow }[1]{{\underset {\uparrow }{#1}}}\)
+
+\(\DeclareMathOperator *{\argmax }{argmax}\)
+
+\(\DeclareMathOperator *{\argmin }{arg\,min}\)
+
+\(\def \E [#1]{\mathbb {E}\!\left [ #1 \right ]}\)
+
+\(\def \Var [#1]{\operatorname {Var}\!\left [ #1 \right ]}\)
+
+\(\def \Cov [#1]{\operatorname {Cov}\!\left [ #1 \right ]}\)
+
+\(\newcommand {\floor }[1]{\lfloor #1 \rfloor }\)
+
+\(\newcommand {\DTFTH }{ H \brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DTFTX }{ X\brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DFTtr }[1]{\mathrm {DFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtr }[1]{\mathrm {DTFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtrI }[1]{\mathrm {DTFT^{-1}}\left \{#1\right \}}\)
+
+\(\newcommand {\Ftr }[1]{ \mathcal {F}\left \{#1\right \}}\)
+
+\(\newcommand {\FtrI }[1]{ \mathcal {F}^{-1}\left \{#1\right \}}\)
+
+\(\newcommand {\Zover }{\overset {\mathscr Z}{\Longleftrightarrow }}\)
+
+\(\renewcommand {\real }{\mathbb {R}}\)
+
+\(\newcommand {\ba }{\mathbf {a}}\)
+
+\(\newcommand {\bb }{\mathbf {b}}\)
+
+\(\newcommand {\bc }{\mathbf {c}}\)
+
+\(\newcommand {\bd }{\mathbf {d}}\)
+
+\(\newcommand {\be }{\mathbf {e}}\)
+
+\(\newcommand {\bf }{\mathbf {f}}\)
+
+\(\newcommand {\bg }{\mathbf {g}}\)
+
+\(\newcommand {\bh }{\mathbf {h}}\)
+
+\(\newcommand {\bi }{\mathbf {i}}\)
+
+\(\newcommand {\bn }{\mathbf {n}}\)
+
+\(\newcommand {\bo }{\mathbf {o}}\)
+
+\(\newcommand {\bp }{\mathbf {p}}\)
+
+\(\newcommand {\bq }{\mathbf {q}}\)
+
+\(\newcommand {\br }{\mathbf {r}}\)
+
+\(\newcommand {\bs }{\mathbf {s}}\)
+
+\(\newcommand {\bt }{\mathbf {t}}\)
+
+\(\newcommand {\bu }{\mathbf {u}}\)
+
+\(\newcommand {\bv }{\mathbf {v}}\)
+
+\(\newcommand {\bw }{\mathbf {w}}\)
+
+\(\newcommand {\bx }{\mathbf {x}}\)
+
+\(\newcommand {\bxx }{\mathbf {xx}}\)
+
+\(\newcommand {\bxy }{\mathbf {xy}}\)
+
+\(\newcommand {\by }{\mathbf {y}}\)
+
+\(\newcommand {\byx }{\mathbf {yx}}\)
+
+\(\newcommand {\byy }{\mathbf {yy}}\)
+
+\(\newcommand {\bz }{\mathbf {z}}\)
+
+\(\newcommand {\bA }{\mathbf {A}}\)
+
+\(\newcommand {\bB }{\mathbf {B}}\)
+
+\(\newcommand {\bC }{\mathbf {C}}\)
+
+\(\newcommand {\bD }{\mathbf {D}}\)
+
+\(\newcommand {\bH }{\mathbf {H}}\)
+
+\(\newcommand {\bI }{\mathbf {I}}\)
+
+\(\newcommand {\bK }{\mathbf {K}}\)
+
+\(\newcommand {\bM }{\mathbf {M}}\)
+
+\(\newcommand {\bP }{\mathbf {P}}\)
+
+\(\newcommand {\bQ }{\mathbf {Q}}\)
+
+\(\newcommand {\bR }{\mathbf {R}}\)
+
+\(\newcommand {\bS }{\mathbf {S}}\)
+
+\(\newcommand {\bU }{\mathbf {U}}\)
+
+\(\newcommand {\bW }{\mathbf {W}}\)
+
+\(\newcommand {\bX }{\mathbf {X}}\)
+
+\(\newcommand {\bY }{\mathbf {Y}}\)
+
+\(\newcommand {\bZ }{\mathbf {Z}}\)
+
+\(\newcommand {\balpha }{\bm {\alpha }}\)
+
+\(\newcommand {\bth }{{\bm {\theta }}}\)
+
+\(\newcommand {\bepsilon }{{\bm {\epsilon }}}\)
+
+\(\newcommand {\bmu }{{\bm {\mu }}}\)
+
+\(\newcommand {\bgamma }{{\bm {\gamma }}}\)
+
+\(\newcommand {\bphi }{\bm {\phi }}\)
+
+\(\newcommand {\bOne }{\mathbf {1}}\)
+
+\(\newcommand {\bZero }{\mathbf {0}}\)
+
+\(\newcommand {\indFunc }{\mathbb {1}}\)
+
+\(\newcommand {\btx }{\tilde {\bx }}\)
+
+\(\newcommand {\loss }{\mathcal {L}}\)
+
+\(\newcommand {\score }{\mathcal {S}}\)
+
+\(\newcommand {\SSE }{\mathrm {SSE}}\)
+
+\(\newcommand {\SST }{\mathrm {SST}}\)
+
+\(\newcommand {\SSR }{\mathrm {SSR}}\)
+
+\(\newcommand {\MSE }{\mathrm {MSE}}\)
+
+\(\newcommand {\RMSE }{\mathrm {RMSE}}\)
+
+\(\newcommand {\toprule }[1][]{\hline }\)
+
+\(\let \midrule \toprule \)
+
+\(\let \bottomrule \toprule \)
+
+\(\def \LWRbooktabscmidruleparen (#1)#2{}\)
+
+\(\newcommand {\LWRbooktabscmidrulenoparen }[1]{}\)
+
+\(\newcommand {\cmidrule }[1][]{\ifnextchar (\LWRbooktabscmidruleparen \LWRbooktabscmidrulenoparen }\)
+
+\(\newcommand {\morecmidrules }{}\)
+
+\(\newcommand {\specialrule }[3]{\hline }\)
+
+\(\newcommand {\addlinespace }[1][]{}\)
+
+\(\newcommand {\LWRsubmultirow }[2][]{#2}\)
+
+\(\newcommand {\LWRmultirow }[2][]{\LWRsubmultirow }\)
+
+\(\newcommand {\multirow }[2][]{\LWRmultirow }\)
+
+\(\newcommand {\mrowcell }{}\)
+
+\(\newcommand {\mcolrowcell }{}\)
+
+\(\newcommand {\STneed }[1]{}\)
+
+\(\newcommand {\tcbset }[1]{}\)
+
+\(\newcommand {\tcbsetforeverylayer }[1]{}\)
+
+\(\newcommand {\tcbox }[2][]{\boxed {\text {#2}}}\)
+
+\(\newcommand {\tcboxfit }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcblower }{}\)
+
+\(\newcommand {\tcbline }{}\)
+
+\(\newcommand {\tcbtitle }{}\)
+
+\(\newcommand {\tcbsubtitle [2][]{\mathrm {#2}}}\)
+
+\(\newcommand {\tcboxmath }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcbhighmath }[2][]{\boxed {#2}}\)
+
+\(\require {colortbl}\)
+
+\(\let \LWRorigcolumncolor \columncolor \)
+
+\(\renewcommand {\columncolor }[2][named]{\LWRorigcolumncolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigrowcolor \rowcolor \)
+
+\(\renewcommand {\rowcolor }[2][named]{\LWRorigrowcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigcellcolor \cellcolor \)
+
+\(\renewcommand {\cellcolor }[2][named]{\LWRorigcellcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+</div>
+
+<!--
+...... section Axes ......
+-->
+<h4 id="autosec-73"><span class="sectionnumber">7&#x2003;</span>Axes</h4>
+<a id="plotting-autopage-73"></a>
+<a id="plotting-autofile-7"></a>
+
+<a id="sec-app-plot-axes"></a>
+
+<p>
+The axis is where a plot is most often quietly wrong, because the same choice is legitimate for one encoding and misleading for another.
+</p>
+<!--
+...... subsection The zero baseline ......
+-->
+<h5 id="autosec-74"><span class="sectionnumber">7.1&#x2003;</span>The zero baseline</h5>
+<a id="plotting-autopage-74"></a>
+
+
+<p>
+Whether an axis must include zero is decided by the encoding, not by convention. A bar encodes its value as a <em>length</em> measured from the baseline. A line encodes <em>position</em>, so cutting the axis rescales the whole
+picture uniformly and the reader can see the axis labels. Fig.&nbsp;<a href="node-7.html#fig-plot-baseline">7.1</a> is the bar case and Fig.&nbsp;<a href="node-7.html#fig-plot-cutaxis">7.2</a> the position case.
+</p>
+
+<figure id="autoid-29" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_baseline.svg" target="_blank" ><img
+    src="figs/plot_baseline.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.1: Four test accuracies, \(92.1\), \(93.4\), \(92.8\) and \(94.0\) percent. (a) With the axis cut at \(91.5\), the bar for \(D\) is \(4.2\) times the length of the bar for \(A\), though the values differ by \(2\%\):
+an exaggeration of a factor of \(4.1\). (b) The same numbers as points, on the same cut axis as (a), with the \(95\%\) confidence interval of each over its \(5\) folds. The cut is legitimate here and not in (a), because a point is at a
+position while a bar is a length measured from the baseline. The panel also reports what neither bar panel can: \(B\) at \(93.40 \pm 0.46\) and \(D\) at \(94.00 \pm 0.43\) are separated from \(A\) at \(92.10 \pm 0.46\), and
+\(C\) at \(92.80 \pm 0.40\) is not. (c) The same numbers as bars on a zero baseline, where the four models are correctly seen to be nearly tied.
+
+</div>
+
+<a id="fig-plot-baseline"></a>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #B20000; background:              #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #B20000; border-bottom:                1px solid #B20000; background:         #B20000; color:      #FFFFFF; "
+>
+
+<p>
+A cut bar chart is not a style choice
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Panel&nbsp;(a) of Fig.&nbsp;<a href="node-7.html#fig-plot-baseline">7.1</a> is the most common misleading chart in circulation, and it is usually produced by accident: many libraries auto-scale the axis to the data range,
+so cutting the baseline is what happens when nothing is specified. Any bar chart whose baseline is not zero should be treated as an error to be fixed, not a decision to be defended.
+</p>
+
+<p>
+If the differences are too small to see on a zero baseline and they matter, plot the differences themselves, with their confidence intervals, on a zero that means <i>no difference</i>.
+</p>
+</div>
+
+</div>
+
+<p>
+The rule is about bars, and it does not run backwards: an axis that includes zero is not automatically the safer one. Fig.&nbsp;<a href="node-7.html#fig-plot-cutaxis">7.2</a> is the same argument from the other side, on a
+quantity whose marks encode position.
+</p>
+
+<figure id="autoid-30" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_cutaxis.svg" target="_blank" ><img
+    src="figs/plot_cutaxis.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.2: A \(40\)-epoch validation loss, drawn twice. (a) The marks encode position, the axis is labeled, the decay and the plateau are both readable, and the limits are chosen so that the curve fills the marked \(76\%\) of
+the panel. (b) The identical curve forced onto \(0\) to \(1\).
+
+</div>
+
+<a id="fig-plot-cutaxis"></a>
+
+</div>
+
+</figure>
+
+<p>
+Forcing zero onto panel&nbsp;(b) does not make it honest, it deletes the finding: the plateau is left with is less than the separation at which a reader resolves anything at all. Nothing is gained in exchange, because no mark in the
+panel is a length measured from the baseline, so there is no length for the cut to distort.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:               #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:                1px solid #BF6000; background:          #BF6000; color:      #FFFFFF; "
+>
+
+<p>
+How far to cut
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A cut is a choice of limits, not just a decision to leave zero out. Choose them so that the data fill about two thirds to three quarters of the panel.
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Cumulative totals ......
+-->
+<h5 id="autosec-77"><span class="sectionnumber">7.2&#x2003;</span>Cumulative totals</h5>
+<a id="plotting-autopage-77"></a>
+
+
+<a id="sec-app-plot-cumulative"></a>
+
+<p>
+The baseline is not the only way a chart can be exactly right about its numbers and wrong about the question. A running total is monotone by construction: it cannot fall, whatever the process underneath it does, so it always
+draws a rising curve. Presented as evidence that an effort is working, it is evidence of nothing. Fig.&nbsp;<a href="node-7.html#fig-plot-cumulative">7.3</a> plots one record both ways.
+</p>
+
+<figure id="autoid-31" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_cumulative.svg" target="_blank" ><img
+    src="figs/plot_cumulative.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.3: A \(60\)-day labeling campaign, plotted as a total and as a rate. (a) The running total climbs to \(4429\) samples and rises on every one of its \(59\) steps, since a cumulative curve cannot do anything else. (b)
+The daily rate that produced it: a peak of \(168\) per day on day \(10\), falling to \(22\) per day by day \(60\), which is \(13\%\) of the peak. The first week contributed \(20\%\) of the total and the last week \(4\%\). Both
+panels are exact, and only (b) answers whether the campaign is still working.
+
+</div>
+
+<a id="fig-plot-cumulative"></a>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #B20000; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Plot the quantity the question is about!
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Aspect ratio ......
+-->
+<h5 id="autosec-79"><span class="sectionnumber">7.3&#x2003;</span>Aspect ratio</h5>
+<a id="plotting-autopage-79"></a>
+
+
+<p>
+The physical shape of the axes changes the slope a reader perceives, and slope is how a line chart is read. Fig.&nbsp;<a href="node-7.html#fig-plot-aspect">7.4</a> draws one series five times with identical axis limits: the
+first three change the height of the axes, and the last two repeat the third of them at two thirds and at a third of its width.
+</p>
+
+<figure id="autoid-32" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_aspect.svg" target="_blank" ><img
+    src="figs/plot_aspect.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.4: One series, one pair of axis limits, five axes shapes. The median segment of the line meets the horizontal at \(7.0^{\circ }\) in (a), \(17.5^{\circ }\) in (b) and \(32.2^{\circ }\) in (c), so the slope the reader
+perceives grows with the height of the axes. Panels (d) and (e) are (c) narrowed to two thirds and to a third of its width, which delivers \(43.4^{\circ }\) and \(63.7^{\circ }\).
+
+</div>
+
+<a id="fig-plot-aspect"></a>
+
+</div>
+
+</figure>
+
+<p>
+<i>Ad hoc</i> Cleveland’s rule of thumb is to <em>bank to \(45^{\circ }\)</em>: choose the aspect ratio so that the typical line segment meets the horizontal near \(45^{\circ }\), since that is where a change in slope is easiest
+to detect.
+</p>
+<!--
+...... subsection Ticks and labels ......
+-->
+<h5 id="autosec-81"><span class="sectionnumber">7.4&#x2003;</span>Ticks and labels</h5>
+<a id="plotting-autopage-81"></a>
+
+
+<a id="sec-app-plot-ticks"></a>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:               #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:                 1px solid #BF6000; background:         #BF6000; color:      #FFFFFF; "
+>
+
+<p>
+Easy numbers
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Ticks at \(1\), \(2\), \(5\), \(10\) and their mulitplications/powers, never at the \(7\) or \(13\) an algorithm sometimes lands on.
+</p>
+</div>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:               #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:                 1px solid #BF6000; background:         #BF6000; color:      #FFFFFF; "
+>
+
+<p>
+Labeled axes
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Every axis names a quantity and a unit. A number without a unit is not a measurement.
+</p>
+</div>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:               #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:                 1px solid #BF6000; background:         #BF6000; color:      #FFFFFF; "
+>
+
+<p>
+Compress offset
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A quantity far from zero has its level stated on the panel and its deviation ticked in a unit sized to the drift. An offset parked in a corner box, or spelled out on every tick, both leave the reader doing arithmetic.
+</p>
+</div>
+
+</div>
+
+<p>
+Fig.&nbsp;<a href="node-7.html#fig-plot-ticks">7.5</a>(a) does what a reader normally asks for and puts the full value on every tick, and this record will not support it: six digits a label to report a drift of
+\(131\)&nbsp;mK, so the level is printed five times over, the quantity the figure is about is carried by the last two digits, and the ticks fall at \(7\)&nbsp;s. State the level on the panel, and tick the deviation from it in a unit sized
+to the drift, which is panel&nbsp;(b).
+</p>
+<figure id="autoid-33" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_ticks.svg" target="_blank" ><img
+    src="figs/plot_ticks.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.5: (a) The full value on every tick: the axis runs \(1233.90\) to \(1234.10\)&nbsp;K in steps of \(0.05\)&nbsp;K, which is six digits a label of which only the last two carry the drift, and the ticks fall at \(7\)&nbsp;s.
+(b) The same record with the level subtracted and the deviation from it ticked in millikelvin: ticks at \(10\)&nbsp;s and \(25\)&nbsp;mK, every one of them a small round number. Zero on this axis is the mean and nothing else,
+the dashed line marks it and names it in full, \(1234.008\)&nbsp;K, so any mark on the panel converts back to an absolute temperature, and the record is seen to run \(-73\) to \(+58\)&nbsp;mK about it.
+
+</div>
+
+<a id="fig-plot-ticks"></a>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:               #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+And treat rotated tick labels as a diagnostic rather than a solution: if the label names do not fit horizontally, the chart wants to be horizontal.
+</p>
+</div>
+
+</div>
+
+<p>
+Rotating a label is not a style preference (Fig.&nbsp;<a href="node-7.html#fig-plot-rotated">7.6</a>). The six names are the same in both panels and so are the six numbers; what changes is where the names are kept. Tilted
+under the axis they claim \(18.3\)&nbsp;mm of a \(66\)&nbsp;mm figure, which is \(28\%\) of its height taken out of the bars, and the reader still has to read them at an angle. Turned on their side they claim
+\(22.8\)&nbsp;mm of width, which comes out of the margin rather than the panel, and the same figure gives the bars \(47.2\)&nbsp;mm of height instead of \(37.6\).
+</p>
+
+<figure id="autoid-34" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_rotated.svg" target="_blank" ><img
+    src="figs/plot_rotated.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.6: Six \(F_1\) scores drawn twice in one figure box with nothing changed but where the category names are kept. (a) Names tilted at \(45^{\circ }\) to fit under a vertical axis. (b) The chart turned on its side.
+
+</div>
+
+<a id="fig-plot-rotated"></a>
+
+</div>
+
+</figure>
+<!--
+...... subsection Legends ......
+-->
+<h5 id="autosec-84"><span class="sectionnumber">7.5&#x2003;</span>Legends</h5>
+<a id="plotting-autopage-84"></a>
+
+
+<a id="sec-app-plot-legend"></a>
+
+<p>
+A series has to be named somewhere, and there are only two approaches to put the name; the two differ in which of the two reading operations of Sec.&nbsp;<a href="node-4.html#sec-app-plot-lookup">4.1</a> the reader is
+made to perform.
+</p>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> A <em>boxed legend</em> is a key set apart from the data, mapping a color or a line style to a name. Reading it is a table look-up, and it is a look-up per mark: the reader carries a
+color/style to the box, finds the matching key, carries the name back, and repeats it for the next series.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> An <em>end-of-line label</em> is the name set at the end of the series it belongs to, in that series’ color. There is nothing to carry anywhere, because the name is already where the reader is
+looking.
+</p>
+</li>
+</ul>
+
+<p>
+Fig.&nbsp;<a href="node-7.html#fig-plot-legend">7.7</a> draws four curves both ways.
+</p>
+
+<figure id="autoid-35" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_legend.svg" target="_blank" ><img
+    src="figs/plot_legend.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.7: Learning curves for four models on identical axes, named two ways. (a) A boxed legend at the position the library chose: it spends \(15\%\) of the panel on the key, and its entries are in the order the series were
+plotted, which is not the order they arrive in at the right edge, so \(2\) of the \(4\) are out of place and the reader re-sorts on every look-up. (b) The same four named where they end. No panel area is spent, no color has to be
+carried anywhere, and the names survive a gray print and a color vision deficiency simulation because there the name identifies the curve and the color only decorates it.
+
+</div>
+
+<a id="fig-plot-legend"></a>
+
+</div>
+
+</figure>
+
+<p>
+Three consequences, in the order they usually matter.
+</p>
+
+<p>
+<em>Label directly whenever there is room.</em> It removes the look-up entirely.
+</p>
+
+<p>
+<em>Where a box is unavoidable, order it to match the page.</em> Sort its entries to match the vertical order of the series at the edge where the reader meets them, and place it over a region carrying no data.
+</p>
+
+<p>
+<em>What the key is made of decides what the look-up costs.</em> A key is read no faster than the channel it maps. Dash patterns and marker shapes are <i>nominal</i>: the entries have no order among them, so each is matched
+glyph by glyph, and the match is made again wherever the curves cross, which is exactly where the glyphs are hardest to tell apart. Line width and lightness are <i>ordered</i>: moved together they turn the key into a sequence,
+read once and then predicted, and its entries come out in the order the curves appear on the page, which is the previous rule obtained for nothing. Fig.&nbsp;<a href="node-7.html#fig-plot-patterned">7.8</a> is one record
+under both.
+</p>
+
+<figure id="autoid-36" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_patterned.svg" target="_blank" ><img
+    src="figs/plot_patterned.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.8: Five plot with a boxed legend in both panels. (a) Keyed by dash pattern and marker shape. The five entries have no order among them. (b) The same five keyed by one ladder, line width from \(2.6\) to
+\(0.7\)&nbsp;pt and gray from \(0.00\) to \(0.72\).
+
+</div>
+
+<a id="fig-plot-patterned"></a>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #9999FF; border-bottom:              1px solid #9999FF; background:         #9999FF; color:     #FFFFFF; "
+>
+
+<p>
+The one place redundancy is worth its ink
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Encoding a quantity twice is normally waste (Sec.&nbsp;<a href="node-11.html#sec-app-plot-dataink">11</a>), and panel&nbsp;(b) does it on purpose: the rank of a series is in its width and in its lightness at once.
+</p>
+</div>
+
+</div>
+
+<p>
+<em>With \(6+\) series, neither form works.</em> End labels start to collide wherever the series converge, a box with a dozen keys is a second figure to read before the first one can be, and no ladder has a dozen separable steps
+either. That is the point at which the answer is small multiples (Sec.&nbsp;<a href="node-7.html#sec-app-plot-many">7.6</a>) or highlighting one series against gray (Fig.&nbsp;<a
+href="node-5.html#fig-plot-highlight">5.12</a>), not a smaller font.
+</p>
+<!--
+...... subsection Many plots at once ......
+-->
+<h5 id="autosec-87"><span class="sectionnumber">7.6&#x2003;</span>Many plots at once</h5>
+<a id="plotting-autopage-87"></a>
+
+
+<a id="sec-app-plot-many"></a>
+<div class="amsthmbodygoal">
+
+<ul class="list" style="list-style-type:none">
+
+
+<li>
+<p>
+<span class="listmarker"><a id="plotting-autopage-88"></a>
+<b>Goal:</b> </span> What does a reader do with ten series that will not fit on one axis?
+</p>
+
+
+</li>
+
+</ul>
+
+</div>
+
+<p>
+Legend won’t help. Stop drawing one plot and draw many: one panel per series, laid out as a grid, every panel on the same range. The grid is called <em>small multiples</em>. Fig.&nbsp;<a
+href="node-7.html#fig-plot-small-multiples">7.9</a> is the overlay beside its replacement.
+</p>
+
+<figure id="autoid-37" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_small_multiples.svg" target="_blank" ><img
+    src="figs/plot_small_multiples.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.9: Ten recordings from one process. (a) Overlaid: the envelope is readable and nothing else is. (b) The same ten as <em>small multiples</em>, one panel each, on one linked range. Three of the ten are not like the
+rest, in three different ways: trace \(3\) runs at \(6\)&nbsp;Hz against the \(3\)&nbsp;Hz of the others, trace \(6\) has \(0.55\) of their amplitude, and trace \(9\) carries \(4.1\) times their noise. Not one of the three can be
+found in (a).
+
+</div>
+
+<a id="fig-plot-small-multiples"></a>
+
+</div>
+
+</figure>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> <em>One range, set once.</em> Give the panels a single range on both axes and link them, so that the range is a property of the block rather than ten separate decisions. Per-panel
+autoscaling is the default in most libraries, and it produces ten plots that look like a comparison and <i>are not</i> one.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <em>Values on the outer edge only.</em> The left column carries the \(y\) values and the bottom row the \(x\) values, and one label of each names the block. Ten copies of one axis is nine
+copies of ink, which is Sec.&nbsp;<a href="node-11.html#sec-app-plot-dataink">11</a> applied to a layout.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <em>Rule every panel, at the ticks it keeps.</em> A panel stripped of its scale reports a shape and no quantity, exactly as a close-up does (Sec.&nbsp;<a
+href="node-7.html#sec-app-plot-closeup">7.7</a>), and the separation still has to clear the limit of Sec.&nbsp;<a href="node-7.html#sec-app-plot-gridlines">7.8</a> at the panel’s reduced size.
+</p>
+</li>
+</ul>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:            #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Sec.&nbsp;<a href="node-4.html#sec-app-plot-perception">4</a> to answer “where is this one among the rest” at a glance, and can be repeated across a row of panels to walk through several. Fig.&nbsp;<a
+href="node-5.html#fig-plot-highlight">5.12</a> is the comparison, on twelve series that an overlay cannot separate.
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Close-ups ......
+-->
+<h5 id="autosec-90"><span class="sectionnumber">7.7&#x2003;</span>Close-ups</h5>
+<a id="plotting-autopage-90"></a>
+
+
+<a id="sec-app-plot-closeup"></a>
+
+<p>
+One axis range cannot always serve both the extent of a record and a feature inside it. A transient a few milliseconds wide, drawn across a panel that covers seconds, gets a fraction of a millimeter of the page whatever the aspect
+ratio, and no amount of care with the ticks recovers it. The answer is a second view at a second scale, and it comes in two forms.
+</p>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> An <em>inset</em>: a small second axes drawn inside the panel, in a region that carries no data. It keeps the overview and the detail in one frame, and it costs nothing but the space it
+occupies.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> A <em>broken-out panel</em>: the same window as a full panel beside the overview. It is the answer when the parent has no free corner, when the zoom needs its own axis labels, or when the
+required magnification is large enough that a small inset would not resolve the feature anyway.
+</p>
+</li>
+</ul>
+
+<p>
+Fig.&nbsp;<a href="node-7.html#fig-plot-closeup">7.10</a> draws one record all three ways.
+</p>
+
+<figure id="autoid-38" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_closeup.svg" target="_blank" ><img
+    src="figs/plot_closeup.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.10: A \(2\)&nbsp;s record sampled at \(5\)&nbsp;kHz, carrying a \(180\)&nbsp;Hz burst on a \(2\)&nbsp;Hz carrier, a frequency ratio of \(90\). (a) The full record: the burst is at \(1.24\)&nbsp;s, it is the only
+thing the record is about. (b) An inset over the \(144\)&nbsp;ms window that contains it, a magnification of \(14\), with the source window boxed on the parent and connected to the inset so the reader can locate what was
+magnified. (c) The same samples as a panel of their own, which is what the window needs when the parent has no room.
+
+</div>
+
+<a id="fig-plot-closeup"></a>
+
+</div>
+
+</figure>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> <em>Mark the source window</em> with a rectangle on the parent panel, and connect the rectangle to the view it produced.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <em>Keep the ticks on the close-up, and rule it at them.</em> A zoom without a scale shows a shape and reports no quantity, and the reader has no way to tell a \(10\)-fold magnification
+from a \(100\)-fold one. Ticks are the minimum; the grid at those ticks is what turns the magnified shape into values the reader can take off the page (Sec.&nbsp;<a href="node-7.html#sec-app-plot-gridlines">7.8</a>), and
+a close-up is read for values rather than for where the feature sits.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <em>Put the inset where there is no data.</em> If the panel has no empty region, that is the signal to break the view out into its own panel rather than to cover the trace with it.
+</p>
+</li>
+</ul>
+<!--
+...... subsection Size and gridlines ......
+-->
+<h5 id="autosec-92"><span class="sectionnumber">7.8&#x2003;</span>Size and gridlines</h5>
+<a id="plotting-autopage-92"></a>
+
+
+<a id="sec-app-plot-gridlines"></a>
+<div class="amsthmbodygoal">
+
+<ul class="list" style="list-style-type:none">
+
+
+<li>
+<p>
+<span class="listmarker"><a id="plotting-autopage-93"></a>
+<b>Goal:</b> </span> How tall must a panel be, and how finely may it be ruled?
+</p>
+
+
+</li>
+
+</ul>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:            #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:              1px solid #BF6000; background:        #BF6000; color:     #FFFFFF; "
+>
+
+<p>
+Two rules for the grid
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> Rule the panel. The grid is the route from a mark to a number, and adding one improved accuracy at every size measured.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Do not shrink a panel below the height at which its scale can be read.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Do not rule it more finely than the reader can resolve.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> At a typical rendering of \(96\) pixels per inch that is a height of about \(2\)&nbsp;cm and a gridline separation of at least \(2\)&nbsp;mm, both measured on the printed page rather than
+on the screen the figure was authored on.
+</p>
+</li>
+</ul>
+
+</div>
+
+</div>
+
+<p>
+Both numbers are measured rather than chosen, and two results are what the measurement leaves for use.<sup>4</sup>
+</p>
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> On a \(0\) to \(100\) scale, gridlines every \(10\) or \(20\) units beat gridlines every \(50\) or \(100\).
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Not usefull once the lines fall closer together than the reader can separate them, which is about \(8\) pixels, or \(2\)&nbsp;mm at final size.
+</p>
+</li>
+</ul>
+
+<p>
+The default is often no grid at all, or a line every \(50\) units, and both leave the reader interpolating a value across half the panel. Fig.&nbsp;<a href="node-7.html#fig-plot-gridsize">7.11</a> is that case beside its fix, at
+one panel size, so the ruling is the only thing that changes between the two.
+</p>
+
+<figure id="autoid-39" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_gridsize.svg" target="_blank" ><img
+    src="figs/plot_gridsize.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.11: One series on a \(0\) to \(100\) scale, with the two values a reader is asked to compare, \(71\) and \(66\), marked. Both panels are \(80\) pixels tall, that is \(21.2\)&nbsp;mm at \(96\) pixels per inch, and
+they differ in nothing but the ruling. (a) No gridlines by default. (b) The same panel ruled every \(20\) units, which is \(4.2\)&nbsp;mm at this height and twice the \(2.1\)&nbsp;mm the eye needs to keep two lines apart: each
+marked value now sits against a line instead of being estimated.
+
+</div>
+
+<a id="fig-plot-gridsize"></a>
+
+</div>
+
+</figure>
+<div role="note" class="footnotes">
+
+<a id="plotting-autopage-95"></a>
+<p>
+<sup>4</sup>&nbsp;Heer and Bostock, <a href="https://doi.org/10.1145/1753326.1753357" target="_blank" >“Crowdsourcing Graphical Perception”</a> (CHI, 2010), third experiment.
+</p>
+
+
+</div>
+<!--
+...... subsection Logarithmic Axes ......
+-->
+<h5 id="autosec-96"><span class="sectionnumber">7.9&#x2003;</span>Logarithmic Axes</h5>
+<a id="plotting-autopage-96"></a>
+
+
+<a id="sec-app-plot-logscale"></a>
+
+<p>
+When a quantity spans several orders of magnitude, a linear axis shows the largest decade and compresses everything else onto the baseline (Fig.&nbsp;<a href="node-7.html#fig-plot-logscale">7.12</a>).
+</p>
+
+<figure id="autoid-40" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_logscale.svg" target="_blank" ><img
+    src="figs/plot_logscale.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;7.12: An eigenvalue spectrum spanning five and a half decades, from \(363\) to \(0.0012\). (a) On a linear axis, \(15\) of the \(24\) eigenvalues fall below \(1\%\) of the largest and are pinned to the baseline,
+indistinguishable from one another and from zero. (b) On a logarithmic axis, the same spectrum is a straight line, which identifies the decay as exponential, and the change of regime at the dashed line becomes something the reader
+can locate rather than guess.
+
+</div>
+
+<a id="fig-plot-logscale"></a>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:               1px solid #BF6000; background:       #BF6000; color:      #FFFFFF; "
+>
+
+<p>
+No zero or negative values
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A log axis cannot show zero or negative values, so a curve that reaches zero needs a different treatment
+</p>
+</div>
+
+</div>
+
+</section>
+
+</main>
+
+
+<nav class="botnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+
+</div><!-- grid -->
+</body>
+</html>

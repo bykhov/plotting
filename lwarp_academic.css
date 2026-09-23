@@ -1,0 +1,154 @@
+/* Theme: Academic Blue — Clean academic look with navy headers */
+@import url("lwarp.css");
+
+body {
+    font-family: "Charter", "Bitstream Charter", "Sitka Text",
+        "Linux Libertine O", Georgia, "Times New Roman", serif;
+    background: #fdfdfe;
+    color: #2c2c2c;
+    line-height: 1.65;
+}
+
+A:link { color: #1a4f8b; text-decoration: none; }
+A:visited { color: #1a4f8b; }
+A:hover { color: #0d3266; text-decoration: underline; }
+
+div.book, h1, h2, h3, h4, h5, h6, span.paragraph, span.subparagraph {
+    font-family: "Charter", "Bitstream Charter", Georgia, "Times New Roman", serif;
+    color: #1a3a5c;
+    text-shadow: none;
+    font-weight: bold;
+}
+
+h1 { background: none; border-bottom: 3px solid #1a3a5c; padding-bottom: 8px; }
+h2 { background: none; border-bottom: 2px solid #1a3a5c; padding-bottom: 6px; margin-top: 2em; }
+h3 { border-bottom: 1px solid #c0c8d4; padding-bottom: 4px; }
+h4, h5, h6 { border-bottom: none; color: #2a4a6c; }
+
+/* Increase monospace (\texttt / <kbd>) size inside headings */
+h1 kbd, h2 kbd, h3 kbd, h4 kbd, h5 kbd, h6 kbd {
+    font-size: 1.15em;
+}
+
+/* Side TOC */
+div.sidetoccontainer { background: #f4f6f9; border-right: 1px solid #d0d6e0; }
+div.sidetoctitle { color: #1a3a5c; border-bottom: 1px solid #d0d6e0; padding: 8px 10px; }
+nav.sidetoc a { color: #2c2c2c; }
+nav.sidetoc a:hover { color: #1a4f8b; background: #e8edf5; text-decoration: none; }
+/* lwarp's base sizes TOC links at .9em x .7em = .63em (~10px), too small to read.
+   Bump to ~.72em of base (~11.5px). */
+nav.sidetoc p a { font-size: 0.8em; }
+
+/* Content blocks */
+.amsthmbodydefinition, .amsthmbodyplain { background: #f7f9fc; border-left: 4px solid #1a4f8b; padding: 12px 16px; margin: 1.5em 0; border-radius: 0 4px 4px 0; }
+.amsthmbodygoal { background: #eef4fb; border-left: 4px solid #2980b9; padding: 10px 16px; margin: 1em 0; border-radius: 0 4px 4px 0; }
+.amsthmproof { background: #f9faf6; border-left: 4px solid #6b8e6b; padding: 12px 16px; margin: 1.5em 0; border-radius: 0 4px 4px 0; }
+.amsthmproofname { font-weight: bold; color: #4a6e4a; }
+.tcolorbox { border-radius: 4px; margin: 1.5em 0; padding: 12px 16px; }
+figure { background: #fdfdfe; border: 1px solid #e0e4ea; border-radius: 4px; padding: 1em; margin: 2em 5%; }
+/* lwarp.css caps img.lateximage at 100% but leaves img.inlineimage uncapped, so a figure
+   wider than the column (e.g. the 657px stft_tradeoff) triggers the horizontal scrollbar
+   from figure{overflow-x:auto} instead of fitting. height:auto keeps the aspect ratio,
+   since the SVGs carry an intrinsic height.
+   Figure labels are additionally sized for the 12pt print page, and each SVG carries its
+   print size (matplotlib in pt, MATLAB in mm, draw.io in px), so a 10pt label renders at
+   13.3px and a draw.io label at 10px against 16px body text. Nothing else can enlarge
+   them: matplotlib writes its labels as outlines, so there is no font-size for CSS to
+   reach, and the max-width caps above can only shrink. zoom is the only property that
+   multiplies an image's intrinsic size and still reflows the surrounding layout;
+   transform:scale would leave the image overlapping its caption. max-width:100% stays as
+   it is and needs no correction for the factor: percentages inside a zoomed element are
+   resolved in that element's own coordinate space, so a scaled figure too wide for the
+   column still stops exactly at the column edge rather than overflowing into the
+   figure{overflow-x:auto} scrollbar (measured, Chrome 151 and Edge). */
+:root { --figscale: 1.3; }
+img.inlineimage[src$=".svg"] {
+    zoom: var(--figscale);
+    max-width: 100%;
+    height: auto;
+}
+/* These seven MATLAB exports already carry 13pt labels (17.3px on screen), so the global
+   scale would push them well past the body text. Hold them at their intrinsic size. */
+img.inlineimage[src^="matlab/general_aspects/"],
+img.inlineimage[src$="matlab/signals_inference/granger_example.svg"],
+img.inlineimage[src$="dl_arch/figs/window_segmentation.svg"] { --figscale: 1; }
+/* lwarp wraps subfigures in an inline-flex div.minipage that is sized to its content, so
+   without this the image's max-width:100% resolves against the oversized minipage and
+   never binds. Capping the minipage restores the chain figure -> minipage -> img.
+   align-items:center replaces the \centering that lwarp drops from each panel: the
+   panel's width is set by its sub-caption, not by its image, so with the default
+   stretch the image sits flush left. Centering the flex items also shrink-wraps a
+   short sub-caption and centers it under its panel. Do not use text-align:center
+   here instead, as that would also center the wrapped lines of long sub-captions. */
+figure div.minipage { max-width: 100%; flex-wrap: wrap; align-items: center; }
+/* Wide display equations (e.g. the harmonic X matrix) are laid out by MathJax at their
+   natural width and would otherwise push the page sideways. Scroll them in place.
+   Restricted to display math: inline mjx-containers must not get a scroll box.
+   The !important is required: for numbered equations MathJax writes an inline
+   min-width (width="full" layout), and min-width always beats max-width. It is cleared
+   on the container only, so the inner svg keeps its natural size and the equation
+   scrolls at full scale instead of being shrunk down. */
+mjx-container[display="true"] {
+    max-width: 100%;
+    min-width: 0 !important;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+div.figurecaption { color: #555; font-size: 0.92em; border-top: 1px solid #e0e4ea; padding-top: 8px; margin-top: 8px; }
+.sidebar { background: #f4f6f9; border: 1px solid #d0d6e0; border-radius: 4px; margin: 2em 5%; padding: 1em; }
+div.sidebartitle { color: #1a3a5c; font-weight: bold; border-bottom: 1px solid #d0d6e0; padding-bottom: 4px; margin-bottom: 8px; }
+pre.verbatim { background: #f0f2f5; border: 1px solid #d0d6e0; border-radius: 4px; padding: 12px; font-size: 0.88em; }
+/* lwarp emits tables as <figure class="table">, never <div class="table"> */
+figure.table { margin: 2em 5%; }
+table { border-collapse: collapse; }
+table tr.hline td { border-bottom: 1px solid #1a3a5c; }
+
+/* Navigation */
+header { background: #1a3a5c; color: white; }
+nav.topnavigation { background: #1a3a5c; }
+nav.topnavigation a { color: white; }
+nav.botnavigation { background: #f0f2f5; border-top: 2px solid #1a3a5c; padding: 8px 16px; }
+footer { background: #f4f6f9; border-top: 1px solid #d0d6e0; padding: 1.5em; color: #666; }
+
+/* Desktop-only Side TOC: Hide side TOC below 50em and ensure body is visible.
+   Aligns with lwarp.css's own 50em grid-restructure rule (top/bottom nav take over). */
+@media screen and (max-width: 50em) {
+    body {
+        overflow-y: auto;
+        height: auto;
+    }
+    div.pagegrid {
+        display: block; /* Disable grid to avoid row/area conflicts */
+        max-height: none;
+        overflow-y: visible;
+    }
+    div.sidetoccontainer {
+        display: none !important; /* Truly hide the TOC */
+    }
+    main.bodycontainer {
+        width: 100%;
+        max-height: none;
+        overflow-y: visible;
+        display: block;
+    }
+    nav.topnavigation, nav.botnavigation {
+        display: block;
+    }
+}
+
+/* Normal whole-page scrolling at all widths.
+   lwarp's base grid sets body{overflow-y:hidden;height:100vh} and delegates
+   scrolling to main.bodycontainer (hiding the window scrollbar). Override it so
+   the page scrolls normally with the browser window scrollbar. */
+body { overflow-y: auto !important; height: auto !important; }
+div.pagegrid, div.homepagegrid { max-height: none !important; }
+main.bodycontainer { max-height: none !important; overflow-y: visible !important; }
+
+/* A grid item defaults to min-width:auto, i.e. it refuses to shrink below the
+   max-content width of its widest child. One wide table (Table 19.1 in the signals
+   chapter, ~1600px of matrices) therefore stretched the body grid column to ~2700px and
+   dragged every width:100% element with it, giving the whole page a horizontal
+   scrollbar. min-width:0 lets the column track the viewport; the wide table then scrolls
+   inside its own figure{overflow-x:auto} box, which is the intended behavior. */
+main.bodycontainer { min-width: 0; }
+div.sidetoccontainer { max-height: none !important; overflow-y: visible !important; }
