@@ -57,6 +57,21 @@ marginparwidth=1cm]{geometry}
 \usepackage{tcolorbox}
 \tcbuselibrary{skins,xparse,breakable}
 \usepackage{colortbl}
+\usepackage{siunitx}
+% lwarp's siunitx emulation defines the unit abbreviations as global MathJax macros,
+% among them \pm = picometre, which turns every \pm on every HTML page into "pm".
+% Restore the plus-minus sign (binary operator, as in TeX).
+\CustomizeMathJax{\renewcommand{\pm}{\mathbin{\unicode{x00B1}}}}
+% Decimal-aligned number columns. Both are the siunitx S column in the PDF; lwarp's
+% HTML S column is centered, so the HTML twins pick the alignment that lines the
+% decimal points up there (the CSS sets tabular figures for table cells). Redefining
+% S itself for HTML fails: lwarp-siunitx defines it only at \begin{document}.
+%   N{2.1}: a fixed number of decimals, so right alignment is decimal alignment.
+%   P: one integer digit and varying decimals (5, 1.3, 0.0001), so left alignment is.
+\newcolumntype{N}[1]{S[table-format=#1]}
+\HTMLnewcolumntype{N}[1]{r}
+\newcolumntype{P}{S[table-format=1.4]}
+\HTMLnewcolumntype{P}{l}
 \usepackage{subcaption}
 \captionsetup[subfigure]{position=bottom,justification=raggedright,singlelinecheck=false}
 \usepackage{graphicx}
@@ -154,5 +169,8 @@ Link to \href{plottingc.pdf}{PDF version} of this document.
 \end{warpHTML}
 
 \input{content}
+
+\appendix
+\input{tables}
 
 \end{document}

@@ -1,0 +1,3523 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Dima Bykhovsky" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Plotting for engineers: visual perception, color and colormaps, choosing the encoding, axes, fonts, transparency, and figures inside a document." />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Tables — Plotting</title>
+<link rel="stylesheet" type="text/css" href="lwarp_academic.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+     subequations: "0",
+     section: "",
+     loader: {
+          load: ['[tex]/tagformat', '[tex]/textmacros'],
+     },
+     startup: {
+          ready() {
+              //       These would be replaced by import commands if you wanted to make
+              //       a proper extension.
+              const Configuration = MathJax._.input.tex.Configuration.Configuration;
+              const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+              const Macro = MathJax._.input.tex.Symbol.Macro;
+              const TexError = MathJax._.input.tex.TexError.default;
+              const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+              const expandable = MathJax._.util.Options.expandable;
+
+
+              //       Insert the replacement string into the TeX string, and check
+              //       that there haven't been too many maxro substitutions (prevents
+              //       infinite loops).
+              const useArgument = (parser, text) => {
+                   parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                   parser.i = 0;
+                   if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                        throw new TexError('MaxMacroSub1',
+                        'MathJax maximum macro substitution count exceeded; ' +
+                        'is there a recursive macro call?');
+                   }
+              }
+
+
+              //       Create the command map for:
+              //            \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+              new CommandMap('Lwarp-macros', {
+                   ifstar: 'IfstarFunction',
+                   ifnextchar: 'IfnextcharFunction',
+                   ifblank: 'IfblankFunction',
+                   ifstrequal: 'IfstrequalFunction',
+                   gsubstitute: 'GsubstituteFunction',
+                   seteqnumber: 'SeteqnumberFunction'
+              }, {
+                   //       This function implements an ifstar macro.
+                   IfstarFunction(parser, name) {
+                        const resultstar = parser.GetArgument(name);
+                        const resultnostar = parser.GetArgument(name);
+                        const star = parser.GetStar();                        // true if there is a *
+                        useArgument(parser, star ? resultstar : resultnostar);
+                   },
+
+
+                   //       This function implements an ifnextchar macro.
+                   IfnextcharFunction(parser, name) {
+                        let whichchar = parser.GetArgument(name);
+                        if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                            // $ syntax highlighting
+                            whichchar = String.fromCodePoint(parseInt(whichchar));
+                        }
+                        const resultnextchar = parser.GetArgument(name);
+                        const resultnotnextchar = parser.GetArgument(name);
+                        const gotchar = (parser.GetNext() === whichchar);
+                        useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                   },
+
+
+                   // This function implements an ifblank macro.
+                   IfblankFunction(parser, name) {
+                        const blankarg = parser.GetArgument(name);
+                        const resultblank = parser.GetArgument(name);
+                        const resultnotblank = parser.GetArgument(name);
+                        const isblank = (blankarg.trim() == "");
+                        useArgument(parser, isblank ? resultblank : resultnotblank);
+                   },
+
+
+                   // This function implements an ifstrequal macro.
+                   IfstrequalFunction(parser, name) {
+                        const strequalfirst = parser.GetArgument(name);
+                        const strequalsecond = parser.GetArgument(name);
+                        const resultequal = parser.GetArgument(name);
+                        const resultnotequal = parser.GetArgument(name);
+                        const isequal = (strequalfirst == strequalsecond);
+                        useArgument(parser, isequal ? resultequal : resultnotequal);
+                   },
+
+
+                   // This function implements a gsub macro.
+                   GsubstituteFunction(parser, name) {
+                        const gsubfirst = parser.GetArgument(name);
+                        const gsubsecond = parser.GetArgument(name);
+                        const gsubthird = parser.GetArgument(name);
+                        let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                        useArgument(parser, gsubresult);
+                   },
+
+
+                   //       This function modifies the equation numbers.
+                   SeteqnumberFunction(parser, name) {
+                            //   Get the macro parameters
+                            const star = parser.GetStar();                      // true if there is a *
+                            const optBrackets = parser.GetBrackets(name);        // contents of optional brackets
+                            const newsubequations = parser.GetArgument(name);      // the subequations argument
+                            const neweqsection = parser.GetArgument(name);      // the eq section argument
+                            const neweqnumber = parser.GetArgument(name);        // the eq number argument
+                            MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                            MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                            parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                   }
+
+
+              });
+
+
+              //       Create the Lwarp-macros package
+              Configuration.create('Lwarp-macros', {
+                   handler: {macro: ['Lwarp-macros']}
+              });
+
+
+              MathJax.startup.defaultReady();
+
+
+              // For forward references:
+              MathJax.startup.input[0].preFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            MathJax.config.subequations = math.inputData.recompile.subequations;
+                            MathJax.config.section = math.inputData.recompile.section;
+                   }
+              });
+              MathJax.startup.input[0].postFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            math.inputData.recompile.subequations = MathJax.config.subequations;
+                            math.inputData.recompile.section = MathJax.config.section;
+                   }
+              });
+
+
+                   // For \left, \right with unicode-math:
+                   const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                   const {Symbol} = MathJax._.input.tex.Symbol;
+                   const {MapHandler} = MathJax._.input.tex.MapHandler;
+                   const delimiter = MapHandler.getMap('delimiter');
+                   delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                   delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                   delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                   delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                   delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                   delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                   delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                   delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                   delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                   delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                   delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                   delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                   delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                   delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                   delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                   delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                   delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                   delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                   delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                   delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                   delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                   delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                   delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                   delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                   delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                   delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                   delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                   delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                   delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                   delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                   delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                   delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                   delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                   delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                   delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                   delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                   delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                   delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                   delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+          }       // ready
+     },            // startup
+
+
+     tex: {
+          packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+          tags: "ams",
+                   tagformat: {
+                            number: function (n) {
+                                 if(MathJax.config.subequations==0)
+                                        return(MathJax.config.section + n);
+                                 else
+                                        return(MathJax.config.section + String.fromCharCode(96+n));
+                            },
+                   },
+     }
+}
+</script>
+
+
+<script
+          id="MathJax-script"
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="plotting-autopage-142"></a>
+<div class="pagegrid">
+
+
+<nav class="topnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+<div class="sidetoccontainer">
+
+
+<nav class="sidetoc">
+
+
+<div class="sidetoctitle">
+
+<p>
+<span class="sidetocthetitle">Plotting</span>
+</p>
+
+<p>
+Contents
+</p>
+</div>
+
+
+<div class="sidetoccontents">
+
+<p>
+<a href="index.html" class="linkhome" >
+Home</a>
+</p>
+
+<p>
+<a href="node-1.html#autosec-9" class="tocsection" >
+<span class="sectionnumber">1</span>&#x2003;Preface</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-12" class="tocsection" >
+<span class="sectionnumber">2</span>&#x2003;A Chart That Cost a Space Vehicle</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-13" class="tocsubsection" >
+<span class="sectionnumber">2.1</span>&#x2003;The Story</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-15" class="tocsubsection" >
+<span class="sectionnumber">2.2</span>&#x2003;The same data on axes</a>
+</p>
+
+
+<p>
+<a href="node-3.html#autosec-19" class="tocsection" >
+<span class="sectionnumber">3</span>&#x2003;Why Plot at All</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-24" class="tocsection" >
+<span class="sectionnumber">4</span>&#x2003;What the Eye Does for Free</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-28" class="tocsubsection" >
+<span class="sectionnumber">4.1</span>&#x2003;Two ways a graph is read</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-33" class="tocsection" >
+<span class="sectionnumber">5</span>&#x2003;Color</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-34" class="tocsubsection" >
+<span class="sectionnumber">5.1</span>&#x2003;Which part of a color can be ranked</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-37" class="tocsubsection" >
+<span class="sectionnumber">5.2</span>&#x2003;Color and grayscale are judged in context</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-39" class="tocsubsection" >
+<span class="sectionnumber">5.3</span>&#x2003;Colormaps</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-45" class="tocsubsection" >
+<span class="sectionnumber">5.4</span>&#x2003;Schemes</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-50" class="tocsubsection" >
+<span class="sectionnumber">5.5</span>&#x2003;Color deficiency</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-56" class="tocsubsection" >
+<span class="sectionnumber">5.6</span>&#x2003;Color Meaning</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-63" class="tocsection" >
+<span class="sectionnumber">6</span>&#x2003;Choosing the Encoding</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-65" class="tocsubsection" >
+<span class="sectionnumber">6.1</span>&#x2003;Case Study: Pie and 3D plots</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-69" class="tocsubsection" >
+<span class="sectionnumber">6.2</span>&#x2003;Case Study: Three variables on a flat page</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-71" class="tocsubsection" >
+<span class="sectionnumber">6.3</span>&#x2003;Case Study: Radar charts</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-74" class="tocsubsection" >
+<span class="sectionnumber">6.4</span>&#x2003;Case Study: Plot matrix</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-81" class="tocsection" >
+<span class="sectionnumber">7</span>&#x2003;Axes</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-82" class="tocsubsection" >
+<span class="sectionnumber">7.1</span>&#x2003;The zero baseline</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-85" class="tocsubsection" >
+<span class="sectionnumber">7.2</span>&#x2003;Cumulative totals</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-87" class="tocsubsection" >
+<span class="sectionnumber">7.3</span>&#x2003;Aspect ratio</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-89" class="tocsubsection" >
+<span class="sectionnumber">7.4</span>&#x2003;Ticks and labels</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-92" class="tocsubsection" >
+<span class="sectionnumber">7.5</span>&#x2003;Legends</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-95" class="tocsubsection" >
+<span class="sectionnumber">7.6</span>&#x2003;Many plots at once</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-98" class="tocsubsection" >
+<span class="sectionnumber">7.7</span>&#x2003;Close-ups</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-100" class="tocsubsection" >
+<span class="sectionnumber">7.8</span>&#x2003;Size and gridlines</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-104" class="tocsubsection" >
+<span class="sectionnumber">7.9</span>&#x2003;Logarithmic Axes</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-108" class="tocsection" >
+<span class="sectionnumber">8</span>&#x2003;Choosing a Font</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-109" class="tocsubsection" >
+<span class="sectionnumber">8.1</span>&#x2003;Figure size sets the text size</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-111" class="tocsubsection" >
+<span class="sectionnumber">8.2</span>&#x2003;The three kinds of face</a>
+</p>
+
+
+<p>
+<a href="node-9.html#autosec-118" class="tocsection" >
+<span class="sectionnumber">9</span>&#x2003;How a Reader Groups Marks</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-123" class="tocsection" >
+<span class="sectionnumber">10</span>&#x2003;Transparency</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-124" class="tocsubsection" >
+<span class="sectionnumber">10.1</span>&#x2003;Misuse</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-126" class="tocsubsection" >
+<span class="sectionnumber">10.2</span>&#x2003;Accumulation</a>
+</p>
+
+
+<p>
+<a href="node-11.html#autosec-131" class="tocsection" >
+<span class="sectionnumber">11</span>&#x2003;Ink That Carries No Data</a>
+</p>
+
+
+<p>
+<a href="node-12.html#autosec-135" class="tocsection" >
+<span class="sectionnumber">12</span>&#x2003;Figures Inside a Document</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-144" class="tocsection" >
+<span class="sectionnumber">A</span>&#x2003;Tables</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-145" class="tocsubsection" >
+<span class="sectionnumber">A.1</span>&#x2003;Table or figure</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-154" class="tocsubsection" >
+<span class="sectionnumber">A.2</span>&#x2003;Round to what the data support</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-159" class="tocsubsection" >
+<span class="sectionnumber">A.3</span>&#x2003;Three horizontal rules, no vertical ones</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-164" class="tocsubsection" >
+<span class="sectionnumber">A.4</span>&#x2003;Group with space and short rules</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-171" class="tocsubsection" >
+<span class="sectionnumber">A.5</span>&#x2003;Text left, numbers on the decimal point</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-176" class="tocsubsection" >
+<span class="sectionnumber">A.6</span>&#x2003;Units in the header, one format per column</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-183" class="tocsubsection" >
+<span class="sectionnumber">A.7</span>&#x2003;Order the rows by what the reader wants</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-188" class="tocsubsection" >
+<span class="sectionnumber">A.8</span>&#x2003;Compare down a column</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-195" class="tocsubsection" >
+<span class="sectionnumber">A.9</span>&#x2003;Emphasize sparingly</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-202" class="tocsubsection" >
+<span class="sectionnumber">A.10</span>&#x2003;Shade cells only for one homogeneous quantity</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-209" class="tocsubsection" >
+<span class="sectionnumber">A.11</span>&#x2003;A caption above the table that states the finding</a>
+</p>
+
+
+<p>
+<a href="node-13.html#autosec-214" class="tocsubsection" >
+<span class="sectionnumber">A.12</span>&#x2003;Checklist</a>
+</p>
+
+
+</div>
+
+</nav>
+
+</div>
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<h1>Plotting</h1>
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+    style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\( \newcommand {\abs }[1]{\lvert #1\rvert } \)
+
+\( \DeclareMathOperator {\sign }{sign} \)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\newcommand {\bm }[1]{\boldsymbol {#1}}\)
+
+\(\require {physics}\)
+
+\(\newcommand {\LWRphystrig }[2]{\ifblank {#1}{\textrm {#2}}{\textrm {#2}^{#1}}}\)
+
+\(\renewcommand {\sin }[1][]{\LWRphystrig {#1}{sin}}\)
+
+\(\renewcommand {\sinh }[1][]{\LWRphystrig {#1}{sinh}}\)
+
+\(\renewcommand {\arcsin }[1][]{\LWRphystrig {#1}{arcsin}}\)
+
+\(\renewcommand {\asin }[1][]{\LWRphystrig {#1}{asin}}\)
+
+\(\renewcommand {\cos }[1][]{\LWRphystrig {#1}{cos}}\)
+
+\(\renewcommand {\cosh }[1][]{\LWRphystrig {#1}{cosh}}\)
+
+\(\renewcommand {\arccos }[1][]{\LWRphystrig {#1}{arcos}}\)
+
+\(\renewcommand {\acos }[1][]{\LWRphystrig {#1}{acos}}\)
+
+\(\renewcommand {\tan }[1][]{\LWRphystrig {#1}{tan}}\)
+
+\(\renewcommand {\tanh }[1][]{\LWRphystrig {#1}{tanh}}\)
+
+\(\renewcommand {\arctan }[1][]{\LWRphystrig {#1}{arctan}}\)
+
+\(\renewcommand {\atan }[1][]{\LWRphystrig {#1}{atan}}\)
+
+\(\renewcommand {\csc }[1][]{\LWRphystrig {#1}{csc}}\)
+
+\(\renewcommand {\csch }[1][]{\LWRphystrig {#1}{csch}}\)
+
+\(\renewcommand {\arccsc }[1][]{\LWRphystrig {#1}{arccsc}}\)
+
+\(\renewcommand {\acsc }[1][]{\LWRphystrig {#1}{acsc}}\)
+
+\(\renewcommand {\sec }[1][]{\LWRphystrig {#1}{sec}}\)
+
+\(\renewcommand {\sech }[1][]{\LWRphystrig {#1}{sech}}\)
+
+\(\renewcommand {\arcsec }[1][]{\LWRphystrig {#1}{arcsec}}\)
+
+\(\renewcommand {\asec }[1][]{\LWRphystrig {#1}{asec}}\)
+
+\(\renewcommand {\cot }[1][]{\LWRphystrig {#1}{cot}}\)
+
+\(\renewcommand {\coth }[1][]{\LWRphystrig {#1}{coth}}\)
+
+\(\renewcommand {\arccot }[1][]{\LWRphystrig {#1}{arccot}}\)
+
+\(\renewcommand {\acot }[1][]{\LWRphystrig {#1}{acot}}\)
+
+\(\require {cancel}\)
+
+\(\newcommand {\underuparrow }[1]{{\underset {\uparrow }{#1}}}\)
+
+\(\DeclareMathOperator *{\argmax }{argmax}\)
+
+\(\DeclareMathOperator *{\argmin }{arg\,min}\)
+
+\(\def \E [#1]{\mathbb {E}\!\left [ #1 \right ]}\)
+
+\(\def \Var [#1]{\operatorname {Var}\!\left [ #1 \right ]}\)
+
+\(\def \Cov [#1]{\operatorname {Cov}\!\left [ #1 \right ]}\)
+
+\(\newcommand {\floor }[1]{\lfloor #1 \rfloor }\)
+
+\(\newcommand {\DTFTH }{ H \brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DTFTX }{ X\brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DFTtr }[1]{\mathrm {DFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtr }[1]{\mathrm {DTFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtrI }[1]{\mathrm {DTFT^{-1}}\left \{#1\right \}}\)
+
+\(\newcommand {\Ftr }[1]{ \mathcal {F}\left \{#1\right \}}\)
+
+\(\newcommand {\FtrI }[1]{ \mathcal {F}^{-1}\left \{#1\right \}}\)
+
+\(\newcommand {\Zover }{\overset {\mathscr Z}{\Longleftrightarrow }}\)
+
+\(\renewcommand {\real }{\mathbb {R}}\)
+
+\(\newcommand {\ba }{\mathbf {a}}\)
+
+\(\newcommand {\bb }{\mathbf {b}}\)
+
+\(\newcommand {\bc }{\mathbf {c}}\)
+
+\(\newcommand {\bd }{\mathbf {d}}\)
+
+\(\newcommand {\be }{\mathbf {e}}\)
+
+\(\newcommand {\bf }{\mathbf {f}}\)
+
+\(\newcommand {\bg }{\mathbf {g}}\)
+
+\(\newcommand {\bh }{\mathbf {h}}\)
+
+\(\newcommand {\bi }{\mathbf {i}}\)
+
+\(\newcommand {\bn }{\mathbf {n}}\)
+
+\(\newcommand {\bo }{\mathbf {o}}\)
+
+\(\newcommand {\bp }{\mathbf {p}}\)
+
+\(\newcommand {\bq }{\mathbf {q}}\)
+
+\(\newcommand {\br }{\mathbf {r}}\)
+
+\(\newcommand {\bs }{\mathbf {s}}\)
+
+\(\newcommand {\bt }{\mathbf {t}}\)
+
+\(\newcommand {\bu }{\mathbf {u}}\)
+
+\(\newcommand {\bv }{\mathbf {v}}\)
+
+\(\newcommand {\bw }{\mathbf {w}}\)
+
+\(\newcommand {\bx }{\mathbf {x}}\)
+
+\(\newcommand {\bxx }{\mathbf {xx}}\)
+
+\(\newcommand {\bxy }{\mathbf {xy}}\)
+
+\(\newcommand {\by }{\mathbf {y}}\)
+
+\(\newcommand {\byx }{\mathbf {yx}}\)
+
+\(\newcommand {\byy }{\mathbf {yy}}\)
+
+\(\newcommand {\bz }{\mathbf {z}}\)
+
+\(\newcommand {\bA }{\mathbf {A}}\)
+
+\(\newcommand {\bB }{\mathbf {B}}\)
+
+\(\newcommand {\bC }{\mathbf {C}}\)
+
+\(\newcommand {\bD }{\mathbf {D}}\)
+
+\(\newcommand {\bH }{\mathbf {H}}\)
+
+\(\newcommand {\bI }{\mathbf {I}}\)
+
+\(\newcommand {\bK }{\mathbf {K}}\)
+
+\(\newcommand {\bM }{\mathbf {M}}\)
+
+\(\newcommand {\bP }{\mathbf {P}}\)
+
+\(\newcommand {\bQ }{\mathbf {Q}}\)
+
+\(\newcommand {\bR }{\mathbf {R}}\)
+
+\(\newcommand {\bS }{\mathbf {S}}\)
+
+\(\newcommand {\bU }{\mathbf {U}}\)
+
+\(\newcommand {\bW }{\mathbf {W}}\)
+
+\(\newcommand {\bX }{\mathbf {X}}\)
+
+\(\newcommand {\bY }{\mathbf {Y}}\)
+
+\(\newcommand {\bZ }{\mathbf {Z}}\)
+
+\(\newcommand {\balpha }{\bm {\alpha }}\)
+
+\(\newcommand {\bth }{{\bm {\theta }}}\)
+
+\(\newcommand {\bepsilon }{{\bm {\epsilon }}}\)
+
+\(\newcommand {\bmu }{{\bm {\mu }}}\)
+
+\(\newcommand {\bgamma }{{\bm {\gamma }}}\)
+
+\(\newcommand {\bphi }{\bm {\phi }}\)
+
+\(\newcommand {\bOne }{\mathbf {1}}\)
+
+\(\newcommand {\bZero }{\mathbf {0}}\)
+
+\(\newcommand {\indFunc }{\mathbb {1}}\)
+
+\(\newcommand {\btx }{\tilde {\bx }}\)
+
+\(\newcommand {\loss }{\mathcal {L}}\)
+
+\(\newcommand {\score }{\mathcal {S}}\)
+
+\(\newcommand {\SSE }{\mathrm {SSE}}\)
+
+\(\newcommand {\SST }{\mathrm {SST}}\)
+
+\(\newcommand {\SSR }{\mathrm {SSR}}\)
+
+\(\newcommand {\MSE }{\mathrm {MSE}}\)
+
+\(\newcommand {\RMSE }{\mathrm {RMSE}}\)
+
+\(\newcommand {\toprule }[1][]{\hline }\)
+
+\(\let \midrule \toprule \)
+
+\(\let \bottomrule \toprule \)
+
+\(\def \LWRbooktabscmidruleparen (#1)#2{}\)
+
+\(\newcommand {\LWRbooktabscmidrulenoparen }[1]{}\)
+
+\(\newcommand {\cmidrule }[1][]{\ifnextchar (\LWRbooktabscmidruleparen \LWRbooktabscmidrulenoparen }\)
+
+\(\newcommand {\morecmidrules }{}\)
+
+\(\newcommand {\specialrule }[3]{\hline }\)
+
+\(\newcommand {\addlinespace }[1][]{}\)
+
+\(\newcommand {\LWRsubmultirow }[2][]{#2}\)
+
+\(\newcommand {\LWRmultirow }[2][]{\LWRsubmultirow }\)
+
+\(\newcommand {\multirow }[2][]{\LWRmultirow }\)
+
+\(\newcommand {\mrowcell }{}\)
+
+\(\newcommand {\mcolrowcell }{}\)
+
+\(\newcommand {\STneed }[1]{}\)
+
+\(\newcommand {\tcbset }[1]{}\)
+
+\(\newcommand {\tcbsetforeverylayer }[1]{}\)
+
+\(\newcommand {\tcbox }[2][]{\boxed {\text {#2}}}\)
+
+\(\newcommand {\tcboxfit }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcblower }{}\)
+
+\(\newcommand {\tcbline }{}\)
+
+\(\newcommand {\tcbtitle }{}\)
+
+\(\newcommand {\tcbsubtitle [2][]{\mathrm {#2}}}\)
+
+\(\newcommand {\tcboxmath }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcbhighmath }[2][]{\boxed {#2}}\)
+
+\(\require {colortbl}\)
+
+\(\let \LWRorigcolumncolor \columncolor \)
+
+\(\renewcommand {\columncolor }[2][named]{\LWRorigcolumncolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigrowcolor \rowcolor \)
+
+\(\renewcommand {\rowcolor }[2][named]{\LWRorigrowcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigcellcolor \cellcolor \)
+
+\(\renewcommand {\cellcolor }[2][named]{\LWRorigcellcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\newcommand {\tothe }[1]{^{#1}}\)
+
+\(\newcommand {\raiseto }[2]{{#2}^{#1}}\)
+
+\(\newcommand {\LWRsiunitxEND }{}\)
+
+\(\def \LWRsiunitxang #1;#2;#3;#4\LWRsiunitxEND {\ifblank {#1}{}{\num {#1}\degree }\ifblank {#2}{}{\num {#2}^{\unicode {x2032}}}\ifblank {#3}{}{\num {#3}^{\unicode {x2033}}}}\)
+
+\(\newcommand {\ang }[2][]{\LWRsiunitxang #2;;;\LWRsiunitxEND }\)
+
+\(\def \LWRsiunitxdistribunit {}\)
+
+\(\newcommand {\LWRsiunitxENDTWO }{}\)
+
+\(\def \LWRsiunitxprintdecimalsubtwo #1,#2,#3\LWRsiunitxENDTWO {\ifblank {#1}{0}{\mathrm {#1}}\ifblank {#2}{}{{\LWRsiunitxdecimal }\mathrm {#2}}}\)
+
+\(\def \LWRsiunitxprintdecimalsub #1.#2.#3\LWRsiunitxEND {\LWRsiunitxprintdecimalsubtwo #1,,\LWRsiunitxENDTWO \ifblank {#2}{}{{\LWRsiunitxdecimal }\LWRsiunitxprintdecimalsubtwo
+#2,,\LWRsiunitxENDTWO }}\)
+
+\(\newcommand {\LWRsiunitxprintdecimal }[1]{\LWRsiunitxprintdecimalsub #1...\LWRsiunitxEND }\)
+
+\(\def \LWRsiunitxnumplus #1+#2+#3\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxprintdecimal {#1}}{\ifblank {#1}{\LWRsiunitxprintdecimal {#2}}{\LWRsiunitxprintdecimal {#1}\unicode
+{x02B}\LWRsiunitxprintdecimal {#2}}}\LWRsiunitxdistribunit }\)
+
+\(\def \LWRsiunitxnumminus #1-#2-#3\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxnumplus #1+++\LWRsiunitxEND }{\ifblank {#1}{}{\LWRsiunitxprintdecimal {#1}}\unicode {x02212}\LWRsiunitxprintdecimal
+{#2}\LWRsiunitxdistribunit }}\)
+
+\(\def \LWRsiunitxnumpmmacro #1\pm #2\pm #3\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxnumminus #1---\LWRsiunitxEND }{\LWRsiunitxprintdecimal {#1}\unicode {x0B1}\LWRsiunitxprintdecimal
+{#2}\LWRsiunitxdistribunit }}\)
+
+\(\def \LWRsiunitxnumpm #1+-#2+-#3\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxnumpmmacro #1\pm \pm \pm \LWRsiunitxEND }{\LWRsiunitxprintdecimal {#1}\unicode {x0B1}\LWRsiunitxprintdecimal
+{#2}\LWRsiunitxdistribunit }}\)
+
+\(\newcommand {\LWRsiunitxnumscientific }[2]{\ifblank {#1}{}{\ifstrequal {#1}{-}{-}{\LWRsiunitxprintdecimal {#1}\times }}10^{\LWRsiunitxprintdecimal {#2}}\LWRsiunitxdistribunit }\)
+
+\(\def \LWRsiunitxnumD #1D#2D#3\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxnumpm #1+-+-\LWRsiunitxEND }{\mathrm {\LWRsiunitxnumscientific {#1}{#2}}}}\)
+
+\(\def \LWRsiunitxnumd #1d#2d#3\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxnumD #1DDD\LWRsiunitxEND }{\mathrm {\LWRsiunitxnumscientific {#1}{#2}}}}\)
+
+\(\def \LWRsiunitxnumE #1E#2E#3\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxnumd #1ddd\LWRsiunitxEND }{\mathrm {\LWRsiunitxnumscientific {#1}{#2}}}}\)
+
+\(\def \LWRsiunitxnume #1e#2e#3\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxnumE #1EEE\LWRsiunitxEND }{\mathrm {\LWRsiunitxnumscientific {#1}{#2}}}}\)
+
+\(\def \LWRsiunitxnumx #1x#2x#3x#4\LWRsiunitxEND {\ifblank {#2}{\LWRsiunitxnume #1eee\LWRsiunitxEND }{\ifblank {#3}{\LWRsiunitxnume #1eee\LWRsiunitxEND \times \LWRsiunitxnume
+#2eee\LWRsiunitxEND }{\LWRsiunitxnume #1eee\LWRsiunitxEND \times \LWRsiunitxnume #2eee\LWRsiunitxEND \times \LWRsiunitxnume #3eee\LWRsiunitxEND }}}\)
+
+\(\newcommand {\num }[2][]{\LWRsiunitxnumx #2xxxxx\LWRsiunitxEND }\)
+
+\(\newcommand {\si }[2][]{\mathrm {\gsubstitute {#2}{~}{\,}}}\)
+
+\(\def \LWRsiunitxSIopt #1[#2]#3{\def \LWRsiunitxdistribunit {\,\si {#3}}{#2}\num {#1}\def \LWRsiunitxdistribunit {}}\)
+
+\(\newcommand {\LWRsiunitxSI }[2]{\def \LWRsiunitxdistribunit {\,\si {#2}}\num {#1}\def \LWRsiunitxdistribunit {}}\)
+
+\(\newcommand {\SI }[2][]{\ifnextchar [{\LWRsiunitxSIopt {#2}}{\LWRsiunitxSI {#2}}}\)
+
+\(\newcommand {\numlist }[2][]{\text {#2}}\)
+
+\(\newcommand {\numrange }[3][]{\num {#2}\ \LWRsiunitxrangephrase \ \num {#3}}\)
+
+\(\newcommand {\SIlist }[3][]{\text {#2}\,\si {#3}}\)
+
+\(\newcommand {\SIrange }[4][]{\num {#2}\,#4\ \LWRsiunitxrangephrase \ \num {#3}\,#4}\)
+
+\(\newcommand {\tablenum }[2][]{\mathrm {#2}}\)
+
+\(\newcommand {\ampere }{\mathrm {A}}\)
+
+\(\newcommand {\candela }{\mathrm {cd}}\)
+
+\(\newcommand {\kelvin }{\mathrm {K}}\)
+
+\(\newcommand {\kilogram }{\mathrm {kg}}\)
+
+\(\newcommand {\metre }{\mathrm {m}}\)
+
+\(\newcommand {\mole }{\mathrm {mol}}\)
+
+\(\newcommand {\second }{\mathrm {s}}\)
+
+\(\newcommand {\becquerel }{\mathrm {Bq}}\)
+
+\(\newcommand {\degreeCelsius }{\unicode {x2103}}\)
+
+\(\newcommand {\coulomb }{\mathrm {C}}\)
+
+\(\newcommand {\farad }{\mathrm {F}}\)
+
+\(\newcommand {\gray }{\mathrm {Gy}}\)
+
+\(\newcommand {\hertz }{\mathrm {Hz}}\)
+
+\(\newcommand {\henry }{\mathrm {H}}\)
+
+\(\newcommand {\joule }{\mathrm {J}}\)
+
+\(\newcommand {\katal }{\mathrm {kat}}\)
+
+\(\newcommand {\lumen }{\mathrm {lm}}\)
+
+\(\newcommand {\lux }{\mathrm {lx}}\)
+
+\(\newcommand {\newton }{\mathrm {N}}\)
+
+\(\newcommand {\ohm }{\mathrm {\Omega }}\)
+
+\(\newcommand {\pascal }{\mathrm {Pa}}\)
+
+\(\newcommand {\radian }{\mathrm {rad}}\)
+
+\(\newcommand {\siemens }{\mathrm {S}}\)
+
+\(\newcommand {\sievert }{\mathrm {Sv}}\)
+
+\(\newcommand {\steradian }{\mathrm {sr}}\)
+
+\(\newcommand {\tesla }{\mathrm {T}}\)
+
+\(\newcommand {\volt }{\mathrm {V}}\)
+
+\(\newcommand {\watt }{\mathrm {W}}\)
+
+\(\newcommand {\weber }{\mathrm {Wb}}\)
+
+\(\newcommand {\day }{\mathrm {d}}\)
+
+\(\newcommand {\degree }{\mathrm {^\circ }}\)
+
+\(\newcommand {\hectare }{\mathrm {ha}}\)
+
+\(\newcommand {\hour }{\mathrm {h}}\)
+
+\(\newcommand {\litre }{\mathrm {l}}\)
+
+\(\newcommand {\liter }{\mathrm {L}}\)
+
+\(\newcommand {\arcminute }{^\prime }\)
+
+\(\newcommand {\minute }{\mathrm {min}}\)
+
+\(\newcommand {\arcsecond }{^{\prime \prime }}\)
+
+\(\newcommand {\tonne }{\mathrm {t}}\)
+
+\(\newcommand {\astronomicalunit }{au}\)
+
+\(\newcommand {\atomicmassunit }{u}\)
+
+\(\newcommand {\bohr }{\mathit {a}_0}\)
+
+\(\newcommand {\clight }{\mathit {c}_0}\)
+
+\(\newcommand {\dalton }{\mathrm {D}_\mathrm {a}}\)
+
+\(\newcommand {\electronmass }{\mathit {m}_{\mathrm {e}}}\)
+
+\(\newcommand {\electronvolt }{\mathrm {eV}}\)
+
+\(\newcommand {\elementarycharge }{\mathit {e}}\)
+
+\(\newcommand {\hartree }{\mathit {E}_{\mathrm {h}}}\)
+
+\(\newcommand {\planckbar }{\mathit {\unicode {x210F}}}\)
+
+\(\newcommand {\angstrom }{\mathrm {\unicode {x212B}}}\)
+
+\(\let \LWRorigbar \bar \)
+
+\(\newcommand {\bar }{\mathrm {bar}}\)
+
+\(\newcommand {\barn }{\mathrm {b}}\)
+
+\(\newcommand {\bel }{\mathrm {B}}\)
+
+\(\newcommand {\decibel }{\mathrm {dB}}\)
+\(\newcommand {\knot }{\mathrm {kn}}\)
+
+\(\newcommand {\mmHg }{\mathrm {mmHg}}\)
+
+\(\newcommand {\nauticalmile }{\mathrm {M}}\)
+
+\(\newcommand {\neper }{\mathrm {Np}}\)
+
+\(\newcommand {\yocto }{\mathrm {y}}\)
+
+\(\newcommand {\zepto }{\mathrm {z}}\)
+
+\(\newcommand {\atto }{\mathrm {a}}\)
+
+\(\newcommand {\femto }{\mathrm {f}}\)
+
+\(\newcommand {\pico }{\mathrm {p}}\)
+
+\(\newcommand {\nano }{\mathrm {n}}\)
+
+\(\newcommand {\micro }{\mathrm {\unicode {x00B5}}}\)
+
+\(\newcommand {\milli }{\mathrm {m}}\)
+
+\(\newcommand {\centi }{\mathrm {c}}\)
+
+\(\newcommand {\deci }{\mathrm {d}}\)
+
+\(\newcommand {\deca }{\mathrm {da}}\)
+
+\(\newcommand {\hecto }{\mathrm {h}}\)
+
+\(\newcommand {\kilo }{\mathrm {k}}\)
+
+\(\newcommand {\mega }{\mathrm {M}}\)
+
+\(\newcommand {\giga }{\mathrm {G}}\)
+
+\(\newcommand {\tera }{\mathrm {T}}\)
+
+\(\newcommand {\peta }{\mathrm {P}}\)
+
+\(\newcommand {\exa }{\mathrm {E}}\)
+
+\(\newcommand {\zetta }{\mathrm {Z}}\)
+
+\(\newcommand {\yotta }{\mathrm {Y}}\)
+
+\(\newcommand {\percent }{\mathrm {\%}}\)
+
+\(\newcommand {\meter }{\mathrm {m}}\)
+
+\(\newcommand {\metre }{\mathrm {m}}\)
+
+\(\newcommand {\gram }{\mathrm {g}}\)
+
+\(\newcommand {\kg }{\kilo \gram }\)
+
+\(\newcommand {\of }[1]{_{\mathrm {#1}}}\)
+
+\(\newcommand {\squared }{^2}\)
+
+\(\newcommand {\square }[1]{\mathrm {#1}^2}\)
+
+\(\newcommand {\cubed }{^3}\)
+
+\(\newcommand {\cubic }[1]{\mathrm {#1}^3}\)
+
+\(\newcommand {\per }{\,\mathrm {/}}\)
+
+\(\newcommand {\celsius }{\unicode {x2103}}\)
+
+\(\newcommand {\fg }{\femto \gram }\)
+
+\(\newcommand {\pg }{\pico \gram }\)
+
+\(\newcommand {\ng }{\nano \gram }\)
+
+\(\newcommand {\ug }{\micro \gram }\)
+
+\(\newcommand {\mg }{\milli \gram }\)
+
+\(\newcommand {\g }{\gram }\)
+
+\(\newcommand {\kg }{\kilo \gram }\)
+
+\(\newcommand {\amu }{\mathrm {u}}\)
+
+\(\newcommand {\pm }{\pico \metre }\)
+
+\(\newcommand {\nm }{\nano \metre }\)
+
+\(\newcommand {\um }{\micro \metre }\)
+
+\(\newcommand {\mm }{\milli \metre }\)
+
+\(\newcommand {\cm }{\centi \metre }\)
+
+\(\newcommand {\dm }{\deci \metre }\)
+
+\(\newcommand {\m }{\metre }\)
+
+\(\newcommand {\km }{\kilo \metre }\)
+
+\(\newcommand {\as }{\atto \second }\)
+
+\(\newcommand {\fs }{\femto \second }\)
+
+\(\newcommand {\ps }{\pico \second }\)
+
+\(\newcommand {\ns }{\nano \second }\)
+
+\(\newcommand {\us }{\micro \second }\)
+
+\(\newcommand {\ms }{\milli \second }\)
+
+\(\newcommand {\s }{\second }\)
+
+\(\newcommand {\fmol }{\femto \mol }\)
+
+\(\newcommand {\pmol }{\pico \mol }\)
+
+\(\newcommand {\nmol }{\nano \mol }\)
+
+\(\newcommand {\umol }{\micro \mol }\)
+
+\(\newcommand {\mmol }{\milli \mol }\)
+
+\(\newcommand {\mol }{\mol }\)
+
+\(\newcommand {\kmol }{\kilo \mol }\)
+
+\(\newcommand {\pA }{\pico \ampere }\)
+
+\(\newcommand {\nA }{\nano \ampere }\)
+
+\(\newcommand {\uA }{\micro \ampere }\)
+
+\(\newcommand {\mA }{\milli \ampere }\)
+
+\(\newcommand {\A }{\ampere }\)
+
+\(\newcommand {\kA }{\kilo \ampere }\)
+
+\(\newcommand {\ul }{\micro \litre }\)
+
+\(\newcommand {\ml }{\milli \litre }\)
+
+\(\newcommand {\l }{\litre }\)
+
+\(\newcommand {\hl }{\hecto \litre }\)
+
+\(\newcommand {\uL }{\micro \liter }\)
+
+\(\newcommand {\mL }{\milli \liter }\)
+
+\(\newcommand {\L }{\liter }\)
+
+\(\newcommand {\hL }{\hecto \liter }\)
+
+\(\newcommand {\mHz }{\milli \hertz }\)
+
+\(\newcommand {\Hz }{\hertz }\)
+
+\(\newcommand {\kHz }{\kilo \hertz }\)
+
+\(\newcommand {\MHz }{\mega \hertz }\)
+
+\(\newcommand {\GHz }{\giga \hertz }\)
+
+\(\newcommand {\THz }{\tera \hertz }\)
+
+\(\newcommand {\mN }{\milli \newton }\)
+
+\(\newcommand {\N }{\newton }\)
+
+\(\newcommand {\kN }{\kilo \newton }\)
+
+\(\newcommand {\MN }{\mega \newton }\)
+
+\(\newcommand {\Pa }{\pascal }\)
+
+\(\newcommand {\kPa }{\kilo \pascal }\)
+
+\(\newcommand {\MPa }{\mega \pascal }\)
+
+\(\newcommand {\GPa }{\giga \pascal }\)
+
+\(\newcommand {\mohm }{\milli \ohm }\)
+
+\(\newcommand {\kohm }{\kilo \ohm }\)
+
+\(\newcommand {\Mohm }{\mega \ohm }\)
+
+\(\newcommand {\pV }{\pico \volt }\)
+
+\(\newcommand {\nV }{\nano \volt }\)
+
+\(\newcommand {\uV }{\micro \volt }\)
+
+\(\newcommand {\mV }{\milli \volt }\)
+
+\(\newcommand {\V }{\volt }\)
+
+\(\newcommand {\kV }{\kilo \volt }\)
+
+\(\newcommand {\W }{\watt }\)
+
+\(\newcommand {\uW }{\micro \watt }\)
+
+\(\newcommand {\mW }{\milli \watt }\)
+
+\(\newcommand {\kW }{\kilo \watt }\)
+
+\(\newcommand {\MW }{\mega \watt }\)
+
+\(\newcommand {\GW }{\giga \watt }\)
+
+\(\newcommand {\J }{\joule }\)
+
+\(\newcommand {\uJ }{\micro \joule }\)
+
+\(\newcommand {\mJ }{\milli \joule }\)
+
+\(\newcommand {\kJ }{\kilo \joule }\)
+
+\(\newcommand {\eV }{\electronvolt }\)
+
+\(\newcommand {\meV }{\milli \electronvolt }\)
+
+\(\newcommand {\keV }{\kilo \electronvolt }\)
+
+\(\newcommand {\MeV }{\mega \electronvolt }\)
+
+\(\newcommand {\GeV }{\giga \electronvolt }\)
+
+\(\newcommand {\TeV }{\tera \electronvolt }\)
+
+\(\newcommand {\kWh }{\kilo \watt \hour }\)
+
+\(\newcommand {\F }{\farad }\)
+
+\(\newcommand {\fF }{\femto \farad }\)
+
+\(\newcommand {\pF }{\pico \farad }\)
+
+\(\newcommand {\K }{\mathrm {K}}\)
+
+\(\newcommand {\dB }{\mathrm {dB}}\)
+
+\(\newcommand {\kibi }{\mathrm {Ki}}\)
+
+\(\newcommand {\mebi }{\mathrm {Mi}}\)
+
+\(\newcommand {\gibi }{\mathrm {Gi}}\)
+
+\(\newcommand {\tebi }{\mathrm {Ti}}\)
+
+\(\newcommand {\pebi }{\mathrm {Pi}}\)
+
+\(\newcommand {\exbi }{\mathrm {Ei}}\)
+
+\(\newcommand {\zebi }{\mathrm {Zi}}\)
+
+\(\newcommand {\yobi }{\mathrm {Yi}}\)
+
+\(\let \unit \si \)
+
+\(\let \qty \SI \)
+
+\(\let \qtylist \SIlist \)
+
+\(\let \qtyrange \SIrange \)
+
+\(\let \numproduct \num \)
+
+\(\let \qtyproduct \SI \)
+
+\(\let \complexnum \num \)
+
+\(\newcommand {\complexqty }[3][]{(\complexnum {#2})\si {#3}}\)
+
+\(\renewcommand {\pm }{\mathbin {\unicode {x00B1}}}\)
+
+\(\def \LWRsiunitxrangephrase {\TextOrMath           { }{\ }\protect \mbox {to}\TextOrMath         { }{\ }}\)
+
+\(\def \LWRsiunitxdecimal {.}\)
+
+</div>
+
+<!--
+...... section Tables ......
+-->
+<h4 id="autosec-144"><span class="sectionnumber">A&#x2003;</span>Tables</h4>
+<a id="plotting-autopage-144"></a>
+<a id="plotting-autofile-13"></a>
+
+<a id="sec-app-table"></a>
+
+<p>
+A table is the right display when the reader looks values up by name (Sec.&nbsp;<a href="node-4.html#sec-app-plot-lookup">4.1</a>), and it is subject to the same economy as a figure: every rule, color and digit either helps
+a reader find and compare numbers or competes with the numbers for attention. Unlike a figure, a table gets no help from the parallel stage of vision (Sec.&nbsp;<a href="node-4.html#sec-app-plot-perception">4</a>). It is
+read serially, cell by cell, so its layout decides how long each look-up takes and whether a comparison can be made at all.
+</p>
+
+<p>
+Each rule below is shown twice on the same numbers: (a) a counterexample that breaks it and (b) an example that follows it. Most of the tables use one running case, the six classifiers of Fig.&nbsp;<a
+href="node-11.html#fig-plot-declutter">11.1</a>, with illustrative scores, fold-to-fold spreads and training times. Every one of those tables is sorted by its quantity of interest, best first, in both of its panels, so that the two
+panels differ only in the rule they illustrate: by F1 wherever F1 is shown, and by training time, fastest first, in the one table that shows only time. The exception is Sec.&nbsp;<a
+href="node-13.html#sec-app-table-order">A.7</a>, where the row order is itself the rule under test.
+</p>
+<!--
+...... subsection Table or figure ......
+-->
+<h5 id="autosec-145"><span class="sectionnumber">A.1&#x2003;</span>Table or figure</h5>
+<a id="plotting-autopage-145"></a>
+
+
+<a id="sec-app-table-choice"></a>
+
+<p>
+Use a table when the reader needs a few exact values, looked up by name, especially values with different units or values that will be copied elsewhere. Use a figure when the question is about shape: a trend, a minimum, a crossing,
+a group. The two directions fail differently, so both are shown.
+</p>
+
+<figure id="autoid-51" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_table_or_figure.svg" target="_blank" ><img
+    src="figs/plot_table_or_figure.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;A.1: (a) <b>Counterexample.</b> Four hyperparameters drawn as bars on one axis. They share no unit and span five orders of magnitude, so the learning rate and the dropout rate vanish, and the two visible bars
+cannot be read to the exact value that a reader copying the setup needs. (b) <b>Example.</b> Training and validation loss per epoch. The question is where validation stops improving, and the curve answers it at a glance: epoch
+13, after which the gap to the training loss only grows.
+
+</div>
+
+<a id="fig-table-choice"></a>
+
+</div>
+
+</figure>
+
+<figure id="autoid-52" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.1: The same two data sets in the other form. A handful of exact, mixed-unit settings reads best as a table; thirty losses do not.
+
+</div>
+
+<a id="tab-table-choice"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-147"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> The losses of Fig.&nbsp;<a href="node-13.html#fig-table-choice">A.1</a>(b), every second epoch. The minimum hides among fifteen similar rows, and the sampling a table forces has moved
+it: the smallest validation loss here is at epoch 16, not 13.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdr">Epoch</td>
+<td class="tdr">Training</td>
+<td class="tdr">Validation</td>
+</tr>
+
+<tr class="hline">
+<td class="tdr">2</td>
+<td class="tdr">1.009</td>
+<td class="tdr">0.999</td>
+</tr>
+
+<tr>
+<td class="tdr">4</td>
+<td class="tdr">0.781</td>
+<td class="tdr">0.782</td>
+</tr>
+
+<tr>
+<td class="tdr">6</td>
+<td class="tdr">0.621</td>
+<td class="tdr">0.643</td>
+</tr>
+
+<tr>
+<td class="tdr">8</td>
+<td class="tdr">0.515</td>
+<td class="tdr">0.566</td>
+</tr>
+
+<tr>
+<td class="tdr">10</td>
+<td class="tdr">0.425</td>
+<td class="tdr">0.510</td>
+</tr>
+
+<tr>
+<td class="tdr">12</td>
+<td class="tdr">0.370</td>
+<td class="tdr">0.486</td>
+</tr>
+
+<tr>
+<td class="tdr">14</td>
+<td class="tdr">0.323</td>
+<td class="tdr">0.479</td>
+</tr>
+<tr>
+<td class="tdr">16</td>
+<td class="tdr">0.299</td>
+<td class="tdr">0.477</td>
+</tr>
+
+<tr>
+<td class="tdr">18</td>
+<td class="tdr">0.273</td>
+<td class="tdr">0.504</td>
+</tr>
+
+<tr>
+<td class="tdr">20</td>
+<td class="tdr">0.254</td>
+<td class="tdr">0.540</td>
+</tr>
+
+<tr>
+<td class="tdr">22</td>
+<td class="tdr">0.247</td>
+<td class="tdr">0.553</td>
+</tr>
+
+<tr>
+<td class="tdr">24</td>
+<td class="tdr">0.241</td>
+<td class="tdr">0.601</td>
+</tr>
+
+<tr>
+<td class="tdr">26</td>
+<td class="tdr">0.234</td>
+<td class="tdr">0.644</td>
+</tr>
+
+<tr>
+<td class="tdr">28</td>
+<td class="tdr">0.228</td>
+<td class="tdr">0.691</td>
+</tr>
+
+<tr>
+<td class="tdr">30</td>
+<td class="tdr">0.228</td>
+<td class="tdr">0.733</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-151"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> The hyperparameters of Fig.&nbsp;<a href="node-13.html#fig-table-choice">A.1</a>(a). Each value is exact, each carries its own unit, and each is found by name in one step.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Hyperparameter</td>
+<td class="tdr">Value</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Learning rate</td>
+<td class="tdr">\(3\times 10^{-4}\)</td>
+</tr>
+
+<tr>
+<td class="tdl">Batch size</td>
+<td class="tdr">64</td>
+</tr>
+
+<tr>
+<td class="tdl">Epochs</td>
+<td class="tdr">30</td>
+</tr>
+
+<tr>
+<td class="tdl">Dropout rate</td>
+<td class="tdr">0.1</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:   #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:   1px solid #BF6000; background:   #BF6000; color:   #FFFFFF; "
+>
+
+<p>
+One number is not a table
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A single value, or two, belongs in the sentence. A table of one row makes the reader leave the text, find the float, and come back for nothing.
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Round to what the data support ......
+-->
+<h5 id="autosec-154"><span class="sectionnumber">A.2&#x2003;</span>Round to what the data support</h5>
+<a id="plotting-autopage-154"></a>
+
+
+<a id="sec-app-table-precision"></a>
+
+<p>
+A digit is worth printing only if it could change a conclusion. When a score varies by \(0.01\) from one cross-validation fold to the next, its third decimal is noise, and printing six decimals makes the reader parse four digits of noise
+per cell before reaching the two that matter. Ehrenberg’s working rule is two <em>effective</em> digits, the digits that vary across the column: they are what the eye can hold and compare. Round the spread to one or two
+significant digits and the value to the same decimal place.
+</p>
+
+<figure id="autoid-53" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.2: F1 score, mean \(\pm \) standard deviation over five folds. Rounded to the spread, the ranking and its uncertainty read in one pass.
+
+</div>
+
+<a id="tab-table-precision"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-155"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> Every digit the software printed.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">\(0.863127 \pm 0.012185\)</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">\(0.829915 \pm 0.012074\)</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">\(0.801356 \pm 0.023712\)</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">\(0.790427 \pm 0.019866\)</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr">\(0.738562 \pm 0.028341\)</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">\(0.713184 \pm 0.021507\)</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-157"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> The spread to one significant digit, the mean to the same decimal place.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">\(0.86 \pm 0.01\)</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">\(0.83 \pm 0.01\)</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">\(0.80 \pm 0.02\)</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">\(0.79 \pm 0.02\)</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr">\(0.74 \pm 0.03\)</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">\(0.71 \pm 0.02\)</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Three horizontal rules, no vertical ones ......
+-->
+<h5 id="autosec-159"><span class="sectionnumber">A.3&#x2003;</span>Three horizontal rules, no vertical ones</h5>
+<a id="plotting-autopage-159"></a>
+
+
+<a id="sec-app-table-rules"></a>
+
+<p>
+A table needs three rules: one above the header, one below it, and one at the bottom. Columns are already separated by the white space between them, which the eye groups by proximity (Sec.&nbsp;<a
+href="node-9.html#sec-app-plot-gestalt">9</a>); a vertical rule adds a line the reader has to cross on every comparison along a row. A full grid turns every cell into a box, and the boxes, not the numbers, become the
+dominant pattern on the page.
+</p>
+
+<figure id="autoid-54" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.3: The same twelve numbers in a grid and in the three-rule layout. The grid adds nine lines and no information.
+
+</div>
+
+<a id="tab-table-rules"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-160"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> Vertical rules, a rule under every row, and a double rule under the header.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">Model</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">F1</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">Accuracy</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">Time (s)</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-top: 4px double; border-left: 1px solid black; border-right:    1px solid black">Gradient boosting</td>
+<td class="tdc tvertbarr" style="border-top: 4px double; border-right: 1px solid black">0.86</td>
+<td class="tdc tvertbarr" style="border-top: 4px double; border-right: 1px solid black">0.89</td>
+<td class="tdc tvertbarr" style="border-top: 4px double; border-right: 1px solid black">41.2</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">Random forest</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.83</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.87</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">8.3</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">SVM</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.79</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.84</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">12.6</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">Ridge</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.71</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.78</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.4</td>
+</tr>
+
+<tr class="hline" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+</tr>
+</table>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-162"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> Top, middle and bottom rules only; the columns are separated by space.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+<td class="tdr">Accuracy</td>
+<td class="tdr">Time (s)</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">0.86</td>
+<td class="tdr">0.89</td>
+<td class="tdr">41.2</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">0.83</td>
+<td class="tdr">0.87</td>
+<td class="tdr">8.3</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">0.79</td>
+<td class="tdr">0.84</td>
+<td class="tdr">12.6</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">0.71</td>
+<td class="tdr">0.78</td>
+<td class="tdr">0.4</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Group with space and short rules ......
+-->
+<h5 id="autosec-164"><span class="sectionnumber">A.4&#x2003;</span>Group with space and short rules</h5>
+<a id="plotting-autopage-164"></a>
+
+
+<a id="sec-app-table-group"></a>
+
+<p>
+When columns or rows fall into groups, show the grouping with the lightest device that works. A spanning header with a short rule under it (<span class="verb">\cmidrule</span> in LaTeX) groups the columns beneath it, and
+a group label on its own row, set off by a little space, groups the rows. Full-width rules between groups and vertical rules between column blocks do the same job at a much higher ink cost, and they cut the table into boxes that the
+reader then has to reassemble.
+</p>
+
+<figure id="autoid-55" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.4: Validation and test scores for three families of models. The grouping is identical in the two versions; only the device that shows it differs.
+
+</div>
+
+<a id="tab-table-group"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-165"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> The column blocks are fenced by vertical rules, the families by full rules, and the family is repeated in a column of its own.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right: 1px solid black"></td>
+<td class="tdl tvertbarrdouble" style="border-right: 4px double black"></td>
+<td colspan="2" class="tdc tvertbarrdouble" style="border-right: 4px double black">Validation</td>
+<td colspan="2" class="tdc tvertbarr" style="border-right: 1px solid black">Test</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">Family</td>
+<td class="tdl tvertbarrdouble" style="border-right: 4px double black">Model</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">F1</td>
+<td class="tdc tvertbarrdouble" style="border-right: 4px double black">Accuracy</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">F1</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">Accuracy</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right: 1px solid black">Tree ensemble</td>
+<td class="tdl tvertbarrdouble" style="border-right: 4px double black">Gradient boosting</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.86</td>
+<td class="tdc tvertbarrdouble" style="border-right: 4px double black">0.89</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.84</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.88</td>
+</tr>
+
+<tr>
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right: 1px solid black">Tree ensemble</td>
+<td class="tdl tvertbarrdouble" style="border-right: 4px double black">Random forest</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.83</td>
+<td class="tdc tvertbarrdouble" style="border-right: 4px double black">0.87</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.81</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.86</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">Neural</td>
+<td class="tdl tvertbarrdouble" style="border-right: 4px double black">MLP</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.80</td>
+<td class="tdc tvertbarrdouble" style="border-right: 4px double black">0.85</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.79</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.84</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">Classical</td>
+<td class="tdl tvertbarrdouble" style="border-right: 4px double black">SVM</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.79</td>
+<td class="tdc tvertbarrdouble" style="border-right: 4px double black">0.84</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.78</td>
+<td class="tdc tvertbarr" style="border-right:   1px solid black">0.83</td>
+</tr>
+
+<tr>
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">Classical</td>
+<td class="tdl tvertbarrdouble" style="border-right: 4px double black">k-NN</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.74</td>
+<td class="tdc tvertbarrdouble" style="border-right: 4px double black">0.80</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.72</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.79</td>
+</tr>
+
+<tr>
+<td class="tdl tvertbarl tvertbarr" style="border-left: 1px solid black; border-right:   1px solid black">Classical</td>
+<td class="tdl tvertbarrdouble" style="border-right: 4px double black">Ridge</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.71</td>
+<td class="tdc tvertbarrdouble" style="border-right: 4px double black">0.78</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.70</td>
+<td class="tdc tvertbarr" style="border-right: 1px solid black">0.77</td>
+</tr>
+
+<tr class="hline" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdl"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+<td class="tdc"></td>
+</tr>
+</table>
+
+</div>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-168"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> Short rules under the spanning headers, and each family named once, on its own row.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl"></td>
+<td colspan="2" class="tdc">Validation</td>
+<td colspan="2" class="tdc">Test</td>
+</tr>
+
+<tr>
+<td class="tdl">Model</td>
+<td class="tdr tdrulel">F1</td>
+<td class="tdr tdruler">Accuracy</td>
+<td class="tdr tdrulel">F1</td>
+<td class="tdr tdruler">Accuracy</td>
+</tr>
+
+<tr class="hline">
+<td colspan="5" class="tdl"><i>Tree ensembles</i></td>
+</tr>
+
+<tr>
+<td class="tdl">&#x2003;
+
+<p>
+Gradient boosting
+</p>
+</td>
+<td class="tdr">0.86</td>
+<td class="tdr">0.89</td>
+<td class="tdr">0.84</td>
+<td class="tdr">0.88</td>
+</tr>
+
+<tr>
+<td class="tdl">&#x2003;Random forest</td>
+<td class="tdr">0.83</td>
+<td class="tdr">0.87</td>
+<td class="tdr">0.81</td>
+<td class="tdr">0.86</td>
+</tr>
+
+<tr>
+<td class="tdl"><td colspan="5" class="tdl"><i>Neural</i></td>
+</tr>
+
+<tr>
+<td class="tdl">&#x2003;MLP</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.85</td>
+<td class="tdr">0.79</td>
+<td class="tdr">0.84</td>
+</tr>
+
+<tr>
+<td class="tdl"><td colspan="5" class="tdl"><i>Classical</i></td>
+</tr>
+
+<tr>
+<td class="tdl">&#x2003;SVM</td>
+<td class="tdr">0.79</td>
+<td class="tdr">0.84</td>
+<td class="tdr">0.78</td>
+<td class="tdr">0.83</td>
+</tr>
+
+<tr>
+<td class="tdl">&#x2003;k-NN</td>
+<td class="tdr">0.74</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.72</td>
+<td class="tdr">0.79</td>
+</tr>
+
+<tr>
+<td class="tdl">&#x2003;Ridge</td>
+<td class="tdr">0.71</td>
+<td class="tdr">0.78</td>
+<td class="tdr">0.70</td>
+<td class="tdr">0.77</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Text left, numbers on the decimal point ......
+-->
+<h5 id="autosec-171"><span class="sectionnumber">A.5&#x2003;</span>Text left, numbers on the decimal point</h5>
+<a id="plotting-autopage-171"></a>
+
+
+<a id="sec-app-table-align"></a>
+
+<p>
+Text is read from its first letter, so text columns are left-aligned. Numbers are compared by magnitude, and magnitude is carried by the digits to the left of the decimal point, so numbers are aligned on it: with the same number of
+decimals in a column, the longer number is visibly the larger one, and the column works as a crude bar chart. Centered numbers lose that, because the position of the decimal point wanders from row to row. In LaTeX, the
+<kbd>S</kbd> column of the <kbd>siunitx</kbd> package aligns on the decimal point.
+</p>
+
+<figure id="autoid-56" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.5: Training time of the six models, fastest first. Aligned on the decimal point, each order of magnitude adds one digit of width, and the two slow models stand out by length alone.
+
+</div>
+
+<a id="tab-table-align"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-172"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> Every column centered, with a varying number of decimals.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdc">Model</td>
+<td class="tdc">Time (s)</td>
+</tr>
+
+<tr class="hline">
+<td class="tdc">k-NN</td>
+<td class="tdc">0.12</td>
+</tr>
+
+<tr>
+<td class="tdc">Ridge</td>
+<td class="tdc">0.4</td>
+</tr>
+
+<tr>
+<td class="tdc">Random forest</td>
+<td class="tdc">8.31</td>
+</tr>
+
+<tr>
+<td class="tdc">SVM</td>
+<td class="tdc">12.6</td>
+</tr>
+
+<tr>
+<td class="tdc">Gradient boosting</td>
+<td class="tdc">41.2</td>
+</tr>
+
+<tr>
+<td class="tdc">MLP</td>
+<td class="tdc">95.7</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdc"></td>
+<td class="tdc"></td>
+</tr>
+</table>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-174"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> Names left-aligned, times aligned on the decimal point with one decimal throughout.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">Time (s)</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">k-NN</td>
+<td class="tdr">0.1</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">0.4</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">8.3</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">12.6</td>
+</tr>
+
+<tr>
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">41.2</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">95.7</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Units in the header, one format per column ......
+-->
+<h5 id="autosec-176"><span class="sectionnumber">A.6&#x2003;</span>Units in the header, one format per column</h5>
+<a id="plotting-autopage-176"></a>
+
+
+<a id="sec-app-table-units"></a>
+
+<p>
+A unit or a scale factor that applies to a whole column is stated once, in its header, and every cell of the column then uses the same unit, the same number format and the same number of decimals. Anything else makes the reader
+convert before comparing: \(86\%\) against \(0.85\), or <em>1 min 36 s</em> against <em>41 s</em>. A negative number takes a true minus sign (\(-0.15\)), not a hyphen (-0.15), which is shorter and sits at a different height.
+</p>
+
+<figure id="autoid-57" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.6: Accuracy, training time, and the F1 gap to the best model. Only the format differs between the two versions.
+
+</div>
+
+<a id="tab-table-units"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-177"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> Units in the cells, three formats for accuracy, four spellings of seconds, and hyphens for minus signs.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">Accuracy</td>
+<td class="tdr">Time</td>
+<td class="tdr">F1 gap</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">0.89</td>
+<td class="tdr">41 s</td>
+<td class="tdr">0</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">87 &percnt;</td>
+<td class="tdr">8.3s</td>
+<td class="tdr">-0.03</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">85&percnt;</td>
+<td class="tdr">1 min 36 s</td>
+<td class="tdr">-0.06</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">.84</td>
+<td class="tdr">12.6 sec</td>
+<td class="tdr">-0.07</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr">80&percnt;</td>
+<td class="tdr">120 ms</td>
+<td class="tdr">-0.12</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">0.78</td>
+<td class="tdr">0.4 s</td>
+<td class="tdr">-0.15</td>
+</tr>
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-180"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> Units in the headers, one format per column, true minus signs.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">Accuracy</td>
+<td class="tdr">Time (s)</td>
+<td class="tdr">F1 gap</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">0.89</td>
+<td class="tdr">41.2</td>
+<td class="tdr">\(0.00\)</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">0.87</td>
+<td class="tdr">8.3</td>
+<td class="tdr">\(-0.03\)</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">0.85</td>
+<td class="tdr">95.7</td>
+<td class="tdr">\(-0.06\)</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">0.84</td>
+<td class="tdr">12.6</td>
+<td class="tdr">\(-0.07\)</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.1</td>
+<td class="tdr">\(-0.12\)</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">0.78</td>
+<td class="tdr">0.4</td>
+<td class="tdr">\(-0.15\)</td>
+</tr>
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Order the rows by what the reader wants ......
+-->
+<h5 id="autosec-183"><span class="sectionnumber">A.7&#x2003;</span>Order the rows by what the reader wants</h5>
+<a id="plotting-autopage-183"></a>
+
+
+<a id="sec-app-table-order"></a>
+
+<p>
+Row order decides which question a table answers, exactly as it did for the chart of Fig.&nbsp;<a href="node-4.html#fig-plot-lookup">4.3</a>. A results table is read for ranking, so its rows are sorted by the quantity of
+interest, and the best and worst models are then the first and last rows. Alphabetical order is the default of most software and serves only a reader who arrives with a name. When the rows have a natural order of their own (time,
+dose, model size), that order wins over both.
+</p>
+
+<figure id="autoid-58" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.7: Validation F1 of the six models. Sorted, the ranking is the table; alphabetical, it has to be reconstructed.
+
+</div>
+
+<a id="tab-table-order"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-184"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> Alphabetical order: to find the runner-up the reader compares all six values.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">0.86</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr">0.74</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">0.80</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">0.83</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">0.71</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">0.79</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-186"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> Sorted by F1, best first: the ranking is read from top to bottom.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">0.86</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">0.83</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">0.80</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">0.79</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr">0.74</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">0.71</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Compare down a column ......
+-->
+<h5 id="autosec-188"><span class="sectionnumber">A.8&#x2003;</span>Compare down a column</h5>
+<a id="plotting-autopage-188"></a>
+
+
+<a id="sec-app-table-transpose"></a>
+
+<p>
+Numbers that are to be compared go in a column, one above the other. Down a column the digits of equal weight sit under each other, the decimal points line up, and the eye runs a short vertical path; along a row, each value is
+separated from the next by a whole cell and the digits no longer line up. The items being compared, here the models, are therefore the rows, and the measures are the columns. A table with more items than measures is also taller
+than it is wide, which is the shape a page holds.
+</p>
+
+<figure id="autoid-59" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.8: The six models on three measures. Transposed, each measure is one column of like numbers.
+
+</div>
+
+<a id="tab-table-transpose"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-189"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> Models as columns: every comparison between models runs along a row.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl"></td>
+<td class="tdr">Gradient boosting</td>
+<td class="tdr">Random forest</td>
+<td class="tdr">MLP</td>
+<td class="tdr">SVM</td>
+<td class="tdr">k-NN</td>
+<td class="tdr">Ridge</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">F1</td>
+<td class="tdr">0.86</td>
+<td class="tdr">0.83</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.79</td>
+<td class="tdr">0.74</td>
+<td class="tdr">0.71</td>
+</tr>
+
+<tr>
+<td class="tdl">Accuracy</td>
+<td class="tdr">0.89</td>
+<td class="tdr">0.87</td>
+<td class="tdr">0.85</td>
+<td class="tdr">0.84</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.78</td>
+</tr>
+
+<tr>
+<td class="tdl">Time (s)</td>
+<td class="tdr">41.2</td>
+<td class="tdr">8.3</td>
+<td class="tdr">95.7</td>
+<td class="tdr">12.6</td>
+<td class="tdr">0.1</td>
+<td class="tdr">0.4</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-192"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> Models as rows: each comparison runs down a column.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+<td class="tdr">Accuracy</td>
+<td class="tdr">Time (s)</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">0.86</td>
+<td class="tdr">0.89</td>
+<td class="tdr">41.2</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">0.83</td>
+<td class="tdr">0.87</td>
+<td class="tdr">8.3</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.85</td>
+<td class="tdr">95.7</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">0.79</td>
+<td class="tdr">0.84</td>
+<td class="tdr">12.6</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr">0.74</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.1</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">0.71</td>
+<td class="tdr">0.78</td>
+<td class="tdr">0.4</td>
+</tr>
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Emphasize sparingly ......
+-->
+<h5 id="autosec-195"><span class="sectionnumber">A.9&#x2003;</span>Emphasize sparingly</h5>
+<a id="plotting-autopage-195"></a>
+
+
+<a id="sec-app-table-emphasis"></a>
+
+<p>
+Emphasis in a table is the pre-attentive pop-out of Sec.&nbsp;<a href="node-4.html#sec-app-plot-perception">4</a> put to work: one bold value in a column is found without a search. That works only while it is rare. Bold
+on every good value, a second color for another criterion and shading on alternate rows leave nothing standing out, and they add a conjunction search (which values are bold <em>and</em> red?) that the reader cannot do at a
+glance. Mark the one thing per column the reader is looking for, usually the best value, and push the reference row back in gray rather than forward in color.
+</p>
+
+<figure id="autoid-60" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.9: The same results, emphasized two ways. With one mark per column, the winner of each measure is found without reading.
+
+</div>
+
+<a id="tab-table-emphasis"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-196"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> Striped rows, every F1 and accuracy at or above \(0.80\) in bold red, every time below \(10\)&nbsp;s in blue.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+<td class="tdr">Accuracy</td>
+<td class="tdr">Time (s)</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl" style="background:#E5E5E5">Gradient boosting</td>
+<td class="tdr" style="background:#E5E5E5"><span
+    class="textcolor"
+    style="color:#FF0000"
+><b>0.86</b></span></td>
+<td class="tdr" style="background:#E5E5E5"><span
+    class="textcolor"
+    style="color:#FF0000"
+><b>0.89</b></span></td>
+<td class="tdr" style="background:#E5E5E5">41.2</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr"><span
+     class="textcolor"
+     style="color:#FF0000"
+><b>0.83</b></span></td>
+<td class="tdr"><span
+     class="textcolor"
+     style="color:#FF0000"
+><b>0.87</b></span></td>
+<td class="tdr"><span
+     class="textcolor"
+     style="color:#0000FF"
+>8.3</span></td>
+</tr>
+
+<tr>
+<td class="tdl" style="background:#E5E5E5">MLP</td>
+<td class="tdr" style="background:#E5E5E5"><span
+    class="textcolor"
+    style="color:#FF0000"
+><b>0.80</b></span></td>
+<td class="tdr" style="background:#E5E5E5"><span
+    class="textcolor"
+    style="color:#FF0000"
+><b>0.85</b></span></td>
+<td class="tdr" style="background:#E5E5E5">95.7</td>
+</tr>
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">0.79</td>
+<td class="tdr"><span
+    class="textcolor"
+    style="color:#FF0000"
+><b>0.84</b></span></td>
+<td class="tdr">12.6</td>
+</tr>
+
+<tr>
+<td class="tdl" style="background:#E5E5E5">k-NN</td>
+<td class="tdr" style="background:#E5E5E5">0.74</td>
+<td class="tdr" style="background:#E5E5E5"><span
+     class="textcolor"
+     style="color:#FF0000"
+><b>0.80</b></span></td>
+<td class="tdr" style="background:#E5E5E5"><span
+     class="textcolor"
+     style="color:#0000FF"
+>0.1</span></td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr">0.71</td>
+<td class="tdr">0.78</td>
+<td class="tdr"><span
+     class="textcolor"
+     style="color:#0000FF"
+>0.4</span></td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-199"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> The best value of each column in bold, the Ridge baseline in gray.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+<td class="tdr">Accuracy</td>
+<td class="tdr">Time (s)</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr"><b>0.86</b></td>
+<td class="tdr"><b>0.89</b></td>
+<td class="tdr">41.2</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">0.83</td>
+<td class="tdr">0.87</td>
+<td class="tdr">8.3</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.85</td>
+<td class="tdr">95.7</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr">0.79</td>
+<td class="tdr">0.84</td>
+<td class="tdr">12.6</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr">0.74</td>
+<td class="tdr">0.80</td>
+<td class="tdr"><b>0.1</b></td>
+</tr>
+
+<tr>
+<td class="tdl"><span
+    class="textcolor"
+    style="color:#808080"
+>Ridge (baseline)</span></td>
+<td class="tdr"><span
+    class="textcolor"
+     style="color:#808080"
+>0.71</span></td>
+<td class="tdr"><span
+     class="textcolor"
+     style="color:#808080"
+>0.78</span></td>
+<td class="tdr"><span
+     class="textcolor"
+     style="color:#808080"
+>0.4</span></td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Shade cells only for one homogeneous quantity ......
+-->
+<h5 id="autosec-202"><span class="sectionnumber">A.10&#x2003;</span>Shade cells only for one homogeneous quantity</h5>
+<a id="plotting-autopage-202"></a>
+
+
+<a id="sec-app-table-shade"></a>
+
+<p>
+Shading each cell by its value turns a table into a heatmap: the pattern is seen at once, and the exact values stay readable. It is honest only when every shaded cell holds the same quantity on the same scale, as in the relations of
+Sec.&nbsp;<a href="node-6.html#sec-app-plot-matrix">6.4</a>: a confusion matrix, a correlation matrix, a distance matrix. Shade a results table instead, and the reader applies one reading, darker is more, to columns with
+different units and different directions. Darker is better for F1 and worse for training time, and nothing in the color says so. The colormap choices of Sec.&nbsp;<a href="node-5.html#sec-app-plot-colormap-scheme">5.4</a>
+apply unchanged: a sequential map for a quantity with a low and a high end, light enough at the top of the scale that the numbers stay legible.
+</p>
+
+<figure id="autoid-61" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.10: Shading is read as “darker is more”. On a results table that reading makes the best model and the slowest one look alike; on a confusion matrix it shows the diagonal at once.
+
+</div>
+
+<a id="tab-table-shade"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-203"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> One colormap over F1 and training time. The darkest cells are the best F1 and the slowest training, and they look alike.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+<td class="tdr">Time (s)</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr"><div class="cellcolor" style="background:#7373FF " >0.86</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#BDBDFF " >41.2</div>
+</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr"><div class="cellcolor" style="background:#8F8FFF " >0.83</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#E8E8FF " >8.3</div>
+</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr"><div class="cellcolor" style="background:#A6A6FF " >0.80</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#7373FF " >95.7</div>
+</td>
+</tr>
+
+<tr>
+<td class="tdl">SVM</td>
+<td class="tdr"><div class="cellcolor" style="background:#ADADFF " >0.79</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#E3E3FF " >12.6</div>
+</td>
+</tr>
+
+<tr>
+<td class="tdl">k-NN</td>
+<td class="tdr"><div class="cellcolor" style="background:#D4D4FF " >0.74</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#F2F2FF " >0.1</div>
+</td>
+</tr>
+
+<tr>
+<td class="tdl">Ridge</td>
+<td class="tdr"><div class="cellcolor" style="background:#EBEBFF " >0.71</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#F2F2FF " >0.4</div>
+</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-206"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> The confusion matrix of gradient boosting on three classes, as a percentage of each true class. One quantity, one scale, and the dark diagonal is the pattern.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl"></td>
+<td colspan="3" class="tdc">Predicted (&percnt;)</td>
+</tr>
+
+<tr>
+<td class="tdl">True class</td>
+<td class="tdr tdrulel">Normal</td>
+<td class="tdr tdrule">Fault A</td>
+<td class="tdr tdruler">Fault B</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Normal</td>
+<td class="tdr"><div class="cellcolor" style="background:#7575FF " >90</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#F5F5FF " >6</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#FAFAFF " >4</div>
+</td>
+</tr>
+
+<tr>
+<td class="tdl">Fault A</td>
+<td class="tdr"><div class="cellcolor" style="background:#E8E8FF " >15</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#9494FF " >70</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#E8E8FF " >15</div>
+</td>
+</tr>
+
+<tr>
+<td class="tdl">Fault B</td>
+<td class="tdr"><div class="cellcolor" style="background:#F7F7FF " >5</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#F0F0FF " >10</div>
+</td>
+<td class="tdr"><div class="cellcolor" style="background:#7D7DFF " >85</div>
+</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+</div>
+
+</figure>
+<!--
+...... subsection A caption above the table that states the finding ......
+-->
+<h5 id="autosec-209"><span class="sectionnumber">A.11&#x2003;</span>A caption above the table that states the finding</h5>
+<a id="plotting-autopage-209"></a>
+
+
+<a id="sec-app-table-caption"></a>
+
+<p>
+A table caption goes above the table, because a table is read from the top and the reader should know what to look for before the first row. As with figures (Sec.&nbsp;<a href="node-12.html#sec-app-plot-document">12</a>),
+the caption states what the table shows, not what it contains: the header row already says that the columns are F1 and accuracy.
+</p>
+
+<figure id="autoid-62" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.11: Placed above and stating the result, a caption tells the reader what to check before the first row is read. The pseudo-captions are set inside the panels, where each version puts them.
+
+</div>
+
+<a id="tab-table-caption"></a>
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-210"></a>
+
+
+<div class="figurecaption">
+(a) <b>Counterexample.</b> A caption below the table that names its contents.
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+<td class="tdr">Accuracy</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">0.86</td>
+<td class="tdr">0.89</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">0.83</td>
+<td class="tdr">0.87</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.85</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+<p>
+<i>Table 3: Results.</i>
+</p>
+
+
+</div>
+
+&#x2003;
+
+&#x2003;
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; ">
+
+<a id="plotting-autopage-212"></a>
+
+
+<div class="figurecaption">
+(b) <b>Example.</b> A caption above the table that states the result.
+
+</div>
+
+<div class="minipage" style="vertical-align:bottom ; justify-content:flex-start ; width:187pt ; ">
+
+<p>
+<i>Table 3: Gradient boosting leads on both measures, and its F1 margin over the random forest, \(0.03\), is three times the fold-to-fold spread.</i>
+</p>
+
+
+</div>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Model</td>
+<td class="tdr">F1</td>
+<td class="tdr">Accuracy</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Gradient boosting</td>
+<td class="tdr">0.86</td>
+<td class="tdr">0.89</td>
+</tr>
+
+<tr>
+<td class="tdl">Random forest</td>
+<td class="tdr">0.83</td>
+<td class="tdr">0.87</td>
+</tr>
+
+<tr>
+<td class="tdl">MLP</td>
+<td class="tdr">0.80</td>
+<td class="tdr">0.85</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdr"></td>
+</tr>
+</table>
+
+</div>
+
+</figure>
+<!--
+...... subsection Checklist ......
+-->
+<h5 id="autosec-214"><span class="sectionnumber">A.12&#x2003;</span>Checklist</h5>
+<a id="plotting-autopage-214"></a>
+
+
+<a id="sec-app-table-checklist"></a>
+
+<p>
+Table&nbsp;<a href="node-13.html#tab-table-checklist">A.12</a> collects the rules, in the order of this appendix, as the questions to ask of a table before it is published. It is built by them: three rules, text left-aligned, and
+the rows in their natural order, the order of the sections.
+</p>
+
+<figure id="autoid-63" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;A.12: Checklist for a table, one question per rule of this appendix.
+
+</div>
+
+<a id="tab-table-checklist"></a>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl">Rule</td>
+<td class="tdl">Check</td>
+<td class="tdl">Sec.</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl">Table or figure</td>
+<td class="tdl">Read for exact values by name, not for a shape?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-choice">A.1</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Precision</td>
+<td class="tdl">No digit finer than the uncertainty?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-precision">A.2</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Rules</td>
+<td class="tdl">Three horizontal rules, no vertical ones?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-rules">A.3</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Grouping</td>
+<td class="tdl">Groups shown by space, short rules, group rows?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-group">A.4</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Alignment</td>
+<td class="tdl">Text left, numbers on the decimal point?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-align">A.5</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Units</td>
+<td class="tdl">Units in the header, one format, true minus?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-units">A.6</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Order</td>
+<td class="tdl">Rows sorted by what the reader wants?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-order">A.7</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Direction</td>
+<td class="tdl">Compared values down a column?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-transpose">A.8</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Emphasis</td>
+<td class="tdl">At most one mark per column?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-emphasis">A.9</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Shading</td>
+<td class="tdl">Shaded cells all one quantity on one scale?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-shade">A.10</a></td>
+</tr>
+
+<tr>
+<td class="tdl">Caption</td>
+<td class="tdl">Above the table, stating the finding?</td>
+<td class="tdl"><a href="node-13.html#sec-app-table-caption">A.11</a></td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdl"></td>
+<td class="tdl"></td>
+</tr>
+</table>
+
+</figure>
+<!--
+...... subsection Further reading ......
+-->
+<h5 id="autosec-216">Further reading</h5>
+<a id="plotting-autopage-216"></a>
+
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> <a href="https://doi.org/10.2307/2344922" target="_blank" >Ehrenberg, “Rudiments of Numeracy”</a> (<em>J. Royal Statistical Society, Series A</em>, vol.&nbsp;140,
+no.&nbsp;3, 1977, pp.&nbsp;277–297): the source of rounding to two effective digits, comparing down columns, ordering rows by size, and adding row and column averages as a focus.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <a href="https://doi.org/10.1017/bca.2020.11" target="_blank" >Schwabish, “Ten Guidelines for Better Tables”</a> (<em>J. Benefit-Cost Analysis</em>, vol.&nbsp;11, no.&nbsp;2,
+2020, pp.&nbsp;151–178): the rules of this appendix, and a few more, applied to six published tables redrawn before and after.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <a href="https://doi.org/10.1198/000313002317572790" target="_blank" >Gelman, Pasarica and Dodhia, “Let’s Practice What We Preach: Turning Tables into Graphs”</a>
+(<em>The American Statistician</em>, vol.&nbsp;56, no.&nbsp;2, 2002, pp.&nbsp;121–130): the other direction of Sec.&nbsp;<a href="node-13.html#sec-app-table-choice">A.1</a>, tables from statistics journals that read
+better as figures.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Few, <em>Show Me the Numbers</em> (2nd ed., 2012): the chapters on table design, including when a table beats a graph.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <a href="https://ctan.org/pkg/booktabs" target="_blank" >Fear, the <kbd>booktabs</kbd> package manual</a>: the three-rule layout of Sec.&nbsp;<a
+href="node-13.html#sec-app-table-rules">A.3</a> and the reasons for it, from the author of the package; and <a href="https://ctan.org/pkg/siunitx" target="_blank" >the <kbd>siunitx</kbd> manual</a> for the
+<kbd>S</kbd> column of Sec.&nbsp;<a href="node-13.html#sec-app-table-align">A.5</a>.
+</p>
+</li>
+</ul>
+
+<a id="plotting-autofile-last"></a>
+</section>
+
+</main>
+
+
+<nav class="botnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+
+</div><!-- grid -->
+</body>
+</html>

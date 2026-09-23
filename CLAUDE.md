@@ -40,6 +40,7 @@ Site: https://bykhov.github.io/plotting/
 
 ## Conventions
 
+- Tables: booktabs rules only, sorted by the quantity of interest (see the Tables appendix, `tables.tex`, which the document's own tables must obey). Decimal-aligned columns use `N{2.1}` (fixed decimals) or `P` (one integer digit, varying decimals), not a bare siunitx `S`: both are `S` in the PDF with HTML twins that align correctly (plotting.tex). Loading siunitx makes lwarp define unit macros such as `\pm` (picometre) in MathJax; plotting.tex restores `\pm`, so check any other unit-named macro (`\mm`, `\ms`, ...) the same way before using it in math.
 - Environments: `goal`, `box_red` (hard errors), `box_yellow` (caveats), `box_blue` (clarifications); an optional `[Title]` gives the box a title bar.
 - Labels: `sec-app-plot-*`, `fig-plot-*`, `eq-plot-*`, `tab-plot-*`. Equations, figures and tables are numbered within sections.
 - `\includegraphics{name}` without directory or extension: `\graphicspath{{figs/}}` resolves it, pdflatex picks `.pdf`, lwarp picks `.svg`. Include figures at natural size, no `width=` (it rescales the text too).

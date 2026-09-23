@@ -89,16 +89,16 @@ Sight carries more information per second than the other senses combined, but it
 	\centering
 	\caption{Information transmission rates of the five senses. The eyes carry two orders of magnitude more than the ears, and the five channels together deliver about $11$~million~bit/s, while conscious processing handles only about $50$~bit/s. That gap of more than five orders of magnitude is the compression every figure in this document is trying to help the reader perform. After the \emph{Encyclop\ae dia Britannica} entry on information theory.}
 	\label{tab-plot-senses}
-	\begin{tabular}{L{5cm}|R{4cm}}
-		\hline
-		\textit{Sensory system} & \textit{Bits per second} \\
-		\hline
-		Eyes  & 10,000,000 \\
-		Skin  & 1,000,000 \\
-		Ears  & 100,000 \\
-		Smell & 100,000 \\
-		Taste & 1,000 \\
-		\hline
+	\begin{tabular}{lr}
+		\toprule
+		Sensory system & Rate (bit/s) \\
+		\midrule
+		Eyes  & $10^{7}$ \\
+		Skin  & $10^{6}$ \\
+		Ears  & $10^{5}$ \\
+		Smell & $10^{5}$ \\
+		Taste & $10^{3}$ \\
+		\bottomrule
 	\end{tabular}
 \end{table}
 
@@ -151,7 +151,7 @@ Fig.~\ref{fig-plot-lookup} draws one set of twenty numbers twice, changing nothi
 Neither panel answers both questions, and the one it answers is decided by the ordering rather than by the encoding, which is identical in the two. So the ordering is not a formatting detail. Most figures in a technical document are read for pattern, which is why sorting by value is the default (Sec.~\ref{sec-app-plot-dataink}).
 
 \begin{box_red}[Figure$\rightarrow$Table]
-a figure that is genuinely consulted by name wants alphabetical order; and a figure that is only ever consulted by name wants to be a table.
+a figure that is genuinely consulted by name wants alphabetical order; and a figure that is only ever consulted by name wants to be a table (App.~\ref{sec-app-table}).
 \end{box_red}
 
 \FloatBarrier
@@ -325,16 +325,16 @@ The deficiency is not one condition. Fig.~\ref{fig-plot-cvd-types} passes the vi
 	\centering
 	\caption{How common each form is, among people of Northern European ancestry, in the row order of Fig.~\ref{fig-plot-cvd-types}. The red-green forms of the first four rows reach about $8\%$ of men, two orders of magnitude above the blue-yellow forms below them.}
 	\label{tab-plot-cvd}
-	\begin{tabular}{L{5cm}|R{1.2cm}@{}L{1.8cm}|R{1.2cm}@{}L{1.8cm}}
+	\begin{tabular}{lPP}
 		\toprule
-		Form & \multicolumn{2}{C{3cm}|}{Men} & \multicolumn{2}{C{3cm}}{Women} \\
+		Form & {Men (\%)} & {Women (\%)} \\
 		\midrule
-		Deuteranomaly & 5 & \% & 0 & .35\% \\
-		Protanomaly & 1 & .3\% & 0 & .02\% \\
-		Protanopia & 1 & .3\% & 0 & .02\% \\
-		Deuteranopia & 1 & .2\% & 0 & .01\% \\
-		Tritanopia & 0 & .008\% & 0 & .008\% \\
-		Tritanomaly & 0 & .0001\% & 0 & .0001\% \\
+		Deuteranomaly & 5 & 0.35 \\
+		Protanomaly & 1.3 & 0.02 \\
+		Protanopia & 1.3 & 0.02 \\
+		Deuteranopia & 1.2 & 0.01 \\
+		Tritanopia & 0.008 & 0.008 \\
+		Tritanomaly & 0.0001 & 0.0001 \\
 		\bottomrule
 	\end{tabular}
 \end{table}
