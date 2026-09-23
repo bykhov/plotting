@@ -1,0 +1,2028 @@
+
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+<meta charset="UTF-8" />
+<meta name="author" content="Dima Bykhovsky" />
+<meta name="generator" content="LaTeX Lwarp package" />
+<meta name="description" content="Plotting for engineers: visual perception, color and colormaps, choosing the encoding, axes, fonts, transparency, and figures inside a document." />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Color — Plotting</title>
+<link rel="stylesheet" type="text/css" href="lwarp_academic.css" />
+
+<script>
+// Lwarp MathJax emulation code
+//
+// Based on code by Davide P. Cervone.
+// Equation numbering: https://github.com/mathjax/MathJax/issues/2427
+// Starred and ifnextchar macros: https://github.com/mathjax/MathJax/issues/2428
+// \left, \right delimiters: https://github.com/mathjax/MathJax/issues/2535
+//
+// Modified by Brian Dunn to adjust equation numbering and add subequations.
+//
+// LaTeX can use \seteqnumber{subequations?}{section}{number} before each equation.
+// subequations? is 0 usually, 1 if inside subequations.
+// section is a string printed as-is, or empty.
+// number is auto-incremented by MathJax between equations.
+//
+MathJax = {
+     subequations: "0",
+     section: "",
+     loader: {
+          load: ['[tex]/tagformat', '[tex]/textmacros'],
+     },
+     startup: {
+          ready() {
+              //       These would be replaced by import commands if you wanted to make
+              //       a proper extension.
+              const Configuration = MathJax._.input.tex.Configuration.Configuration;
+              const CommandMap = MathJax._.input.tex.SymbolMap.CommandMap;
+              const Macro = MathJax._.input.tex.Symbol.Macro;
+              const TexError = MathJax._.input.tex.TexError.default;
+              const ParseUtil = MathJax._.input.tex.ParseUtil.default;
+              const expandable = MathJax._.util.Options.expandable;
+
+
+              //       Insert the replacement string into the TeX string, and check
+              //       that there haven't been too many maxro substitutions (prevents
+              //       infinite loops).
+              const useArgument = (parser, text) => {
+                   parser.string = ParseUtil.addArgs(parser, text, parser.string.slice(parser.i));
+                   parser.i = 0;
+                   if (++parser.macroCount > parser.configuration.options.maxMacros) {
+                        throw new TexError('MaxMacroSub1',
+                        'MathJax maximum macro substitution count exceeded; ' +
+                        'is there a recursive macro call?');
+                   }
+              }
+
+
+              //       Create the command map for:
+              //            \ifstar, \ifnextchar, \ifblank, \ifstrequal, \gsub, \seteqnumber
+              new CommandMap('Lwarp-macros', {
+                   ifstar: 'IfstarFunction',
+                   ifnextchar: 'IfnextcharFunction',
+                   ifblank: 'IfblankFunction',
+                   ifstrequal: 'IfstrequalFunction',
+                   gsubstitute: 'GsubstituteFunction',
+                   seteqnumber: 'SeteqnumberFunction'
+              }, {
+                   //       This function implements an ifstar macro.
+                   IfstarFunction(parser, name) {
+                        const resultstar = parser.GetArgument(name);
+                        const resultnostar = parser.GetArgument(name);
+                        const star = parser.GetStar();                        // true if there is a *
+                        useArgument(parser, star ? resultstar : resultnostar);
+                   },
+
+
+                   //       This function implements an ifnextchar macro.
+                   IfnextcharFunction(parser, name) {
+                        let whichchar = parser.GetArgument(name);
+                        if (whichchar.match(/^(?:0x[0-9A-F]+|[0-9]+)$/i)) {
+                            // $ syntax highlighting
+                            whichchar = String.fromCodePoint(parseInt(whichchar));
+                        }
+                        const resultnextchar = parser.GetArgument(name);
+                        const resultnotnextchar = parser.GetArgument(name);
+                        const gotchar = (parser.GetNext() === whichchar);
+                        useArgument(parser, gotchar ? resultnextchar : resultnotnextchar);
+                   },
+
+
+                   // This function implements an ifblank macro.
+                   IfblankFunction(parser, name) {
+                        const blankarg = parser.GetArgument(name);
+                        const resultblank = parser.GetArgument(name);
+                        const resultnotblank = parser.GetArgument(name);
+                        const isblank = (blankarg.trim() == "");
+                        useArgument(parser, isblank ? resultblank : resultnotblank);
+                   },
+
+
+                   // This function implements an ifstrequal macro.
+                   IfstrequalFunction(parser, name) {
+                        const strequalfirst = parser.GetArgument(name);
+                        const strequalsecond = parser.GetArgument(name);
+                        const resultequal = parser.GetArgument(name);
+                        const resultnotequal = parser.GetArgument(name);
+                        const isequal = (strequalfirst == strequalsecond);
+                        useArgument(parser, isequal ? resultequal : resultnotequal);
+                   },
+
+
+                   // This function implements a gsub macro.
+                   GsubstituteFunction(parser, name) {
+                        const gsubfirst = parser.GetArgument(name);
+                        const gsubsecond = parser.GetArgument(name);
+                        const gsubthird = parser.GetArgument(name);
+                        let gsubresult=gsubfirst.replace(gsubsecond, gsubthird);
+                        useArgument(parser, gsubresult);
+                   },
+
+
+                   //       This function modifies the equation numbers.
+                   SeteqnumberFunction(parser, name) {
+                            //   Get the macro parameters
+                            const star = parser.GetStar();                      // true if there is a *
+                            const optBrackets = parser.GetBrackets(name);        // contents of optional brackets
+                            const newsubequations = parser.GetArgument(name);      // the subequations argument
+                            const neweqsection = parser.GetArgument(name);      // the eq section argument
+                            const neweqnumber = parser.GetArgument(name);        // the eq number argument
+                            MathJax.config.subequations=newsubequations ;       // a string with boolean meaning
+                            MathJax.config.section=neweqsection ;               // a string with numeric meaning
+                            parser.tags.counter = parser.tags.allCounter = neweqnumber ;
+                   }
+
+
+              });
+
+
+              //       Create the Lwarp-macros package
+              Configuration.create('Lwarp-macros', {
+                   handler: {macro: ['Lwarp-macros']}
+              });
+
+
+              MathJax.startup.defaultReady();
+
+
+              // For forward references:
+              MathJax.startup.input[0].preFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            MathJax.config.subequations = math.inputData.recompile.subequations;
+                            MathJax.config.section = math.inputData.recompile.section;
+                   }
+              });
+              MathJax.startup.input[0].postFilters.add(({math}) => {
+                   if (math.inputData.recompile){
+                            math.inputData.recompile.subequations = MathJax.config.subequations;
+                            math.inputData.recompile.section = MathJax.config.section;
+                   }
+              });
+
+
+                   // For \left, \right with unicode-math:
+                   const {DelimiterMap} = MathJax._.input.tex.SymbolMap;
+                   const {Symbol} = MathJax._.input.tex.Symbol;
+                   const {MapHandler} = MathJax._.input.tex.MapHandler;
+                   const delimiter = MapHandler.getMap('delimiter');
+                   delimiter.add('\\lBrack', new Symbol('\\lBrack', '\u27E6'));
+                   delimiter.add('\\rBrack', new Symbol('\\rBrack', '\u27E7'));
+                   delimiter.add('\\lAngle', new Symbol('\\lAngle', '\u27EA'));
+                   delimiter.add('\\rAngle', new Symbol('\\rAngle', '\u27EB'));
+                   delimiter.add('\\lbrbrak', new Symbol('\\lbrbrak', '\u2772'));
+                   delimiter.add('\\rbrbrak', new Symbol('\\rbrbrak', '\u2773'));
+                   delimiter.add('\\lbag', new Symbol('\\lbag', '\u27C5'));
+                   delimiter.add('\\rbag', new Symbol('\\rbag', '\u27C6'));
+                   delimiter.add('\\llparenthesis', new Symbol('\\llparenthesis', '\u2987'));
+                   delimiter.add('\\rrparenthesis', new Symbol('\\rrparenthesis', '\u2988'));
+                   delimiter.add('\\llangle', new Symbol('\\llangle', '\u2989'));
+                   delimiter.add('\\rrangle', new Symbol('\\rrangle', '\u298A'));
+                   delimiter.add('\\Lbrbrak', new Symbol('\\Lbrbrak', '\u27EC'));
+                   delimiter.add('\\Rbrbrak', new Symbol('\\Rbrbrak', '\u27ED'));
+                   delimiter.add('\\lBrace', new Symbol('\\lBrace', '\u2983'));
+                   delimiter.add('\\rBrace', new Symbol('\\rBrace', '\u2984'));
+                   delimiter.add('\\lParen', new Symbol('\\lParen', '\u2985'));
+                   delimiter.add('\\rParen', new Symbol('\\rParen', '\u2986'));
+                   delimiter.add('\\lbrackubar', new Symbol('\\lbrackubar', '\u298B'));
+                   delimiter.add('\\rbrackubar', new Symbol('\\rbrackubar', '\u298C'));
+                   delimiter.add('\\lbrackultick', new Symbol('\\lbrackultick', '\u298D'));
+                   delimiter.add('\\rbracklrtick', new Symbol('\\rbracklrtick', '\u298E'));
+                   delimiter.add('\\lbracklltick', new Symbol('\\lbracklltick', '\u298F'));
+                   delimiter.add('\\rbrackurtick', new Symbol('\\rbrackurtick', '\u2990'));
+                   delimiter.add('\\langledot', new Symbol('\\langledot', '\u2991'));
+                   delimiter.add('\\rangledot', new Symbol('\\rangledot', '\u2992'));
+                   delimiter.add('\\lparenless', new Symbol('\\lparenless', '\u2993'));
+                   delimiter.add('\\rparengtr', new Symbol('\\rparengtr', '\u2994'));
+                   delimiter.add('\\Lparengtr', new Symbol('\\Lparengtr', '\u2995'));
+                   delimiter.add('\\Rparenless', new Symbol('\\Rparenless', '\u2996'));
+                   delimiter.add('\\lblkbrbrak', new Symbol('\\lblkbrbrak', '\u2997'));
+                   delimiter.add('\\rblkbrbrak', new Symbol('\\rblkbrbrak', '\u2998'));
+                   delimiter.add('\\lvzigzag', new Symbol('\\lvzigzag', '\u29D8'));
+                   delimiter.add('\\rvzigzag', new Symbol('\\rvzigzag', '\u29D9'));
+                   delimiter.add('\\Lvzigzag', new Symbol('\\Lvzigzag', '\u29DA'));
+                   delimiter.add('\\Rvzigzag', new Symbol('\\Rvzigzag', '\u29DB'));
+                   delimiter.add('\\lcurvyangle', new Symbol('\\lcurvyangle', '\u29FC'));
+                   delimiter.add('\\rcurvyangle', new Symbol('\\rcurvyangle', '\u29FD'));
+                   delimiter.add('\\Vvert', new Symbol('\\Vvert', '\u2980'));
+          }       // ready
+     },            // startup
+
+
+     tex: {
+          packages: {'[+]': ['tagformat', 'Lwarp-macros', 'textmacros']},
+          tags: "ams",
+                   tagformat: {
+                            number: function (n) {
+                                 if(MathJax.config.subequations==0)
+                                        return(MathJax.config.section + n);
+                                 else
+                                        return(MathJax.config.section + String.fromCharCode(96+n));
+                            },
+                   },
+     }
+}
+</script>
+
+
+<script
+          id="MathJax-script"
+          src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"
+></script>
+
+</head>
+<body>
+
+
+<a id="plotting-autopage-26"></a>
+<div class="pagegrid">
+
+
+<nav class="topnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+<div class="sidetoccontainer">
+
+
+<nav class="sidetoc">
+
+
+<div class="sidetoctitle">
+
+<p>
+<span class="sidetocthetitle">Plotting</span>
+</p>
+
+<p>
+Contents
+</p>
+</div>
+
+
+<div class="sidetoccontents">
+
+<p>
+<a href="index.html" class="linkhome" >
+Home</a>
+</p>
+
+<p>
+<a href="node-1.html#autosec-7" class="tocsection" >
+<span class="sectionnumber">1</span>&#x2003;Preface</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-9" class="tocsection" >
+<span class="sectionnumber">2</span>&#x2003;A Chart That Cost a Space Vehicle</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-10" class="tocsubsection" >
+<span class="sectionnumber">2.1</span>&#x2003;The Story</a>
+</p>
+
+
+<p>
+<a href="node-2.html#autosec-12" class="tocsubsection" >
+<span class="sectionnumber">2.2</span>&#x2003;The same data on axes</a>
+</p>
+
+
+<p>
+<a href="node-3.html#autosec-15" class="tocsection" >
+<span class="sectionnumber">3</span>&#x2003;Why Plot at All</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-19" class="tocsection" >
+<span class="sectionnumber">4</span>&#x2003;What the Eye Does for Free</a>
+</p>
+
+
+<p>
+<a href="node-4.html#autosec-23" class="tocsubsection" >
+<span class="sectionnumber">4.1</span>&#x2003;Two ways a graph is read</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-27" class="tocsection" >
+<span class="sectionnumber">5</span>&#x2003;Color</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-28" class="tocsubsection" >
+<span class="sectionnumber">5.1</span>&#x2003;Which part of a color can be ranked</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-31" class="tocsubsection" >
+<span class="sectionnumber">5.2</span>&#x2003;Color and grayscale are judged in context</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-33" class="tocsubsection" >
+<span class="sectionnumber">5.3</span>&#x2003;Colormaps</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-39" class="tocsubsection" >
+<span class="sectionnumber">5.4</span>&#x2003;Schemes</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-44" class="tocsubsection" >
+<span class="sectionnumber">5.5</span>&#x2003;Color deficiency</a>
+</p>
+
+
+<p>
+<a href="node-5.html#autosec-50" class="tocsubsection" >
+<span class="sectionnumber">5.6</span>&#x2003;Color Meaning</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-56" class="tocsection" >
+<span class="sectionnumber">6</span>&#x2003;Choosing the Encoding</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-58" class="tocsubsection" >
+<span class="sectionnumber">6.1</span>&#x2003;Case Study: Pie and 3D plots</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-62" class="tocsubsection" >
+<span class="sectionnumber">6.2</span>&#x2003;Case Study: Three variables on a flat page</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-64" class="tocsubsection" >
+<span class="sectionnumber">6.3</span>&#x2003;Case Study: Radar charts</a>
+</p>
+
+
+<p>
+<a href="node-6.html#autosec-67" class="tocsubsection" >
+<span class="sectionnumber">6.4</span>&#x2003;Case Study: Plot matrix</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-73" class="tocsection" >
+<span class="sectionnumber">7</span>&#x2003;Axes</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-74" class="tocsubsection" >
+<span class="sectionnumber">7.1</span>&#x2003;The zero baseline</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-77" class="tocsubsection" >
+<span class="sectionnumber">7.2</span>&#x2003;Cumulative totals</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-79" class="tocsubsection" >
+<span class="sectionnumber">7.3</span>&#x2003;Aspect ratio</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-81" class="tocsubsection" >
+<span class="sectionnumber">7.4</span>&#x2003;Ticks and labels</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-84" class="tocsubsection" >
+<span class="sectionnumber">7.5</span>&#x2003;Legends</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-87" class="tocsubsection" >
+<span class="sectionnumber">7.6</span>&#x2003;Many plots at once</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-90" class="tocsubsection" >
+<span class="sectionnumber">7.7</span>&#x2003;Close-ups</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-92" class="tocsubsection" >
+<span class="sectionnumber">7.8</span>&#x2003;Size and gridlines</a>
+</p>
+
+
+<p>
+<a href="node-7.html#autosec-96" class="tocsubsection" >
+<span class="sectionnumber">7.9</span>&#x2003;Logarithmic Axes</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-99" class="tocsection" >
+<span class="sectionnumber">8</span>&#x2003;Choosing a Font</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-100" class="tocsubsection" >
+<span class="sectionnumber">8.1</span>&#x2003;Figure size sets the text size</a>
+</p>
+
+
+<p>
+<a href="node-8.html#autosec-102" class="tocsubsection" >
+<span class="sectionnumber">8.2</span>&#x2003;The three kinds of face</a>
+</p>
+
+
+<p>
+<a href="node-9.html#autosec-108" class="tocsection" >
+<span class="sectionnumber">9</span>&#x2003;How a Reader Groups Marks</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-112" class="tocsection" >
+<span class="sectionnumber">10</span>&#x2003;Transparency</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-113" class="tocsubsection" >
+<span class="sectionnumber">10.1</span>&#x2003;Misuse</a>
+</p>
+
+
+<p>
+<a href="node-10.html#autosec-115" class="tocsubsection" >
+<span class="sectionnumber">10.2</span>&#x2003;Accumulation</a>
+</p>
+
+
+<p>
+<a href="node-11.html#autosec-119" class="tocsection" >
+<span class="sectionnumber">11</span>&#x2003;Ink That Carries No Data</a>
+</p>
+
+
+<p>
+<a href="node-12.html#autosec-122" class="tocsection" >
+<span class="sectionnumber">12</span>&#x2003;Figures Inside a Document</a>
+</p>
+
+
+</div>
+
+</nav>
+
+</div>
+
+
+<main class="bodycontainer">
+
+
+<section class="textbody">
+
+<h1>Plotting</h1>
+
+<!--MathJax customizations:-->
+<div data-nosnippet
+    style="display:none"
+>
+
+\(\newcommand{\footnotename}{footnote}\)
+
+\(\def \LWRfootnote {1}\)
+
+\(\newcommand {\footnote }[2][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\newcommand {\footnotemark }[1][\LWRfootnote ]{{}^{\mathrm {#1}}}\)
+
+\(\let \LWRorighspace \hspace \)
+
+\(\renewcommand {\hspace }{\ifstar \LWRorighspace \LWRorighspace }\)
+
+\(\newcommand {\TextOrMath }[2]{#2}\)
+
+\(\newcommand {\mathnormal }[1]{{#1}}\)
+
+\(\newcommand \ensuremath [1]{#1}\)
+
+\(\newcommand {\LWRframebox }[2][]{\fbox {#2}} \newcommand {\framebox }[1][]{\LWRframebox } \)
+
+\(\newcommand {\setlength }[2]{}\)
+
+\(\newcommand {\addtolength }[2]{}\)
+
+\(\newcommand {\setcounter }[2]{}\)
+
+\(\newcommand {\addtocounter }[2]{}\)
+
+\(\newcommand {\arabic }[1]{}\)
+
+\(\newcommand {\number }[1]{}\)
+
+\(\newcommand {\noalign }[1]{\text {#1}\notag \\}\)
+
+\(\newcommand {\cline }[1]{}\)
+
+\(\newcommand {\directlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\luatexdirectlua }[1]{\text {(directlua)}}\)
+
+\(\newcommand {\protect }{}\)
+
+\(\def \LWRabsorbnumber #1 {}\)
+
+\(\def \LWRabsorbquotenumber &quot;#1 {}\)
+
+\(\newcommand {\LWRabsorboption }[1][]{}\)
+
+\(\newcommand {\LWRabsorbtwooptions }[1][]{\LWRabsorboption }\)
+
+\(\def \mathchar {\ifnextchar &quot;\LWRabsorbquotenumber \LWRabsorbnumber }\)
+
+\(\def \mathcode #1={\mathchar }\)
+
+\(\let \delcode \mathcode \)
+
+\(\let \delimiter \mathchar \)
+
+\(\def \oe {\unicode {x0153}}\)
+
+\(\def \OE {\unicode {x0152}}\)
+
+\(\def \ae {\unicode {x00E6}}\)
+
+\(\def \AE {\unicode {x00C6}}\)
+
+\(\def \aa {\unicode {x00E5}}\)
+
+\(\def \AA {\unicode {x00C5}}\)
+
+\(\def \o {\unicode {x00F8}}\)
+
+\(\def \O {\unicode {x00D8}}\)
+
+\(\def \l {\unicode {x0142}}\)
+
+\(\def \L {\unicode {x0141}}\)
+
+\(\def \ss {\unicode {x00DF}}\)
+
+\(\def \SS {\unicode {x1E9E}}\)
+
+\(\def \dag {\unicode {x2020}}\)
+
+\(\def \ddag {\unicode {x2021}}\)
+
+\(\def \P {\unicode {x00B6}}\)
+
+\(\def \copyright {\unicode {x00A9}}\)
+
+\(\def \pounds {\unicode {x00A3}}\)
+
+\(\let \LWRref \ref \)
+
+\(\renewcommand {\ref }{\ifstar \LWRref \LWRref }\)
+
+\( \newcommand {\multicolumn }[3]{#3}\)
+
+\(\require {textcomp}\)
+
+\( \newcommand {\abs }[1]{\lvert #1\rvert } \)
+
+\( \DeclareMathOperator {\sign }{sign} \)
+
+\(\newcommand {\intertext }[1]{\text {#1}\notag \\}\)
+
+\(\let \Hat \hat \)
+
+\(\let \Check \check \)
+
+\(\let \Tilde \tilde \)
+
+\(\let \Acute \acute \)
+
+\(\let \Grave \grave \)
+
+\(\let \Dot \dot \)
+
+\(\let \Ddot \ddot \)
+
+\(\let \Breve \breve \)
+
+\(\let \Bar \bar \)
+
+\(\let \Vec \vec \)
+
+\(\newcommand {\bm }[1]{\boldsymbol {#1}}\)
+
+\(\require {physics}\)
+
+\(\newcommand {\LWRphystrig }[2]{\ifblank {#1}{\textrm {#2}}{\textrm {#2}^{#1}}}\)
+
+\(\renewcommand {\sin }[1][]{\LWRphystrig {#1}{sin}}\)
+
+\(\renewcommand {\sinh }[1][]{\LWRphystrig {#1}{sinh}}\)
+
+\(\renewcommand {\arcsin }[1][]{\LWRphystrig {#1}{arcsin}}\)
+
+\(\renewcommand {\asin }[1][]{\LWRphystrig {#1}{asin}}\)
+
+\(\renewcommand {\cos }[1][]{\LWRphystrig {#1}{cos}}\)
+
+\(\renewcommand {\cosh }[1][]{\LWRphystrig {#1}{cosh}}\)
+
+\(\renewcommand {\arccos }[1][]{\LWRphystrig {#1}{arcos}}\)
+
+\(\renewcommand {\acos }[1][]{\LWRphystrig {#1}{acos}}\)
+
+\(\renewcommand {\tan }[1][]{\LWRphystrig {#1}{tan}}\)
+
+\(\renewcommand {\tanh }[1][]{\LWRphystrig {#1}{tanh}}\)
+
+\(\renewcommand {\arctan }[1][]{\LWRphystrig {#1}{arctan}}\)
+
+\(\renewcommand {\atan }[1][]{\LWRphystrig {#1}{atan}}\)
+
+\(\renewcommand {\csc }[1][]{\LWRphystrig {#1}{csc}}\)
+
+\(\renewcommand {\csch }[1][]{\LWRphystrig {#1}{csch}}\)
+
+\(\renewcommand {\arccsc }[1][]{\LWRphystrig {#1}{arccsc}}\)
+
+\(\renewcommand {\acsc }[1][]{\LWRphystrig {#1}{acsc}}\)
+
+\(\renewcommand {\sec }[1][]{\LWRphystrig {#1}{sec}}\)
+
+\(\renewcommand {\sech }[1][]{\LWRphystrig {#1}{sech}}\)
+
+\(\renewcommand {\arcsec }[1][]{\LWRphystrig {#1}{arcsec}}\)
+
+\(\renewcommand {\asec }[1][]{\LWRphystrig {#1}{asec}}\)
+
+\(\renewcommand {\cot }[1][]{\LWRphystrig {#1}{cot}}\)
+
+\(\renewcommand {\coth }[1][]{\LWRphystrig {#1}{coth}}\)
+
+\(\renewcommand {\arccot }[1][]{\LWRphystrig {#1}{arccot}}\)
+
+\(\renewcommand {\acot }[1][]{\LWRphystrig {#1}{acot}}\)
+
+\(\require {cancel}\)
+
+\(\newcommand {\underuparrow }[1]{{\underset {\uparrow }{#1}}}\)
+
+\(\DeclareMathOperator *{\argmax }{argmax}\)
+
+\(\DeclareMathOperator *{\argmin }{arg\,min}\)
+
+\(\def \E [#1]{\mathbb {E}\!\left [ #1 \right ]}\)
+
+\(\def \Var [#1]{\operatorname {Var}\!\left [ #1 \right ]}\)
+
+\(\def \Cov [#1]{\operatorname {Cov}\!\left [ #1 \right ]}\)
+
+\(\newcommand {\floor }[1]{\lfloor #1 \rfloor }\)
+
+\(\newcommand {\DTFTH }{ H \brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DTFTX }{ X\brk 1{e^{j\omega }}}\)
+
+\(\newcommand {\DFTtr }[1]{\mathrm {DFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtr }[1]{\mathrm {DTFT}\left \{#1\right \}}\)
+
+\(\newcommand {\DTFTtrI }[1]{\mathrm {DTFT^{-1}}\left \{#1\right \}}\)
+
+\(\newcommand {\Ftr }[1]{ \mathcal {F}\left \{#1\right \}}\)
+
+\(\newcommand {\FtrI }[1]{ \mathcal {F}^{-1}\left \{#1\right \}}\)
+
+\(\newcommand {\Zover }{\overset {\mathscr Z}{\Longleftrightarrow }}\)
+
+\(\renewcommand {\real }{\mathbb {R}}\)
+
+\(\newcommand {\ba }{\mathbf {a}}\)
+
+\(\newcommand {\bb }{\mathbf {b}}\)
+
+\(\newcommand {\bc }{\mathbf {c}}\)
+
+\(\newcommand {\bd }{\mathbf {d}}\)
+
+\(\newcommand {\be }{\mathbf {e}}\)
+
+\(\newcommand {\bf }{\mathbf {f}}\)
+
+\(\newcommand {\bg }{\mathbf {g}}\)
+
+\(\newcommand {\bh }{\mathbf {h}}\)
+
+\(\newcommand {\bi }{\mathbf {i}}\)
+
+\(\newcommand {\bn }{\mathbf {n}}\)
+
+\(\newcommand {\bo }{\mathbf {o}}\)
+
+\(\newcommand {\bp }{\mathbf {p}}\)
+
+\(\newcommand {\bq }{\mathbf {q}}\)
+
+\(\newcommand {\br }{\mathbf {r}}\)
+
+\(\newcommand {\bs }{\mathbf {s}}\)
+
+\(\newcommand {\bt }{\mathbf {t}}\)
+
+\(\newcommand {\bu }{\mathbf {u}}\)
+
+\(\newcommand {\bv }{\mathbf {v}}\)
+
+\(\newcommand {\bw }{\mathbf {w}}\)
+
+\(\newcommand {\bx }{\mathbf {x}}\)
+
+\(\newcommand {\bxx }{\mathbf {xx}}\)
+
+\(\newcommand {\bxy }{\mathbf {xy}}\)
+
+\(\newcommand {\by }{\mathbf {y}}\)
+
+\(\newcommand {\byx }{\mathbf {yx}}\)
+
+\(\newcommand {\byy }{\mathbf {yy}}\)
+
+\(\newcommand {\bz }{\mathbf {z}}\)
+
+\(\newcommand {\bA }{\mathbf {A}}\)
+
+\(\newcommand {\bB }{\mathbf {B}}\)
+
+\(\newcommand {\bC }{\mathbf {C}}\)
+
+\(\newcommand {\bD }{\mathbf {D}}\)
+
+\(\newcommand {\bH }{\mathbf {H}}\)
+
+\(\newcommand {\bI }{\mathbf {I}}\)
+
+\(\newcommand {\bK }{\mathbf {K}}\)
+
+\(\newcommand {\bM }{\mathbf {M}}\)
+
+\(\newcommand {\bP }{\mathbf {P}}\)
+
+\(\newcommand {\bQ }{\mathbf {Q}}\)
+
+\(\newcommand {\bR }{\mathbf {R}}\)
+
+\(\newcommand {\bS }{\mathbf {S}}\)
+
+\(\newcommand {\bU }{\mathbf {U}}\)
+
+\(\newcommand {\bW }{\mathbf {W}}\)
+
+\(\newcommand {\bX }{\mathbf {X}}\)
+
+\(\newcommand {\bY }{\mathbf {Y}}\)
+
+\(\newcommand {\bZ }{\mathbf {Z}}\)
+
+\(\newcommand {\balpha }{\bm {\alpha }}\)
+
+\(\newcommand {\bth }{{\bm {\theta }}}\)
+
+\(\newcommand {\bepsilon }{{\bm {\epsilon }}}\)
+
+\(\newcommand {\bmu }{{\bm {\mu }}}\)
+
+\(\newcommand {\bgamma }{{\bm {\gamma }}}\)
+
+\(\newcommand {\bphi }{\bm {\phi }}\)
+
+\(\newcommand {\bOne }{\mathbf {1}}\)
+
+\(\newcommand {\bZero }{\mathbf {0}}\)
+
+\(\newcommand {\indFunc }{\mathbb {1}}\)
+
+\(\newcommand {\btx }{\tilde {\bx }}\)
+
+\(\newcommand {\loss }{\mathcal {L}}\)
+
+\(\newcommand {\score }{\mathcal {S}}\)
+
+\(\newcommand {\SSE }{\mathrm {SSE}}\)
+
+\(\newcommand {\SST }{\mathrm {SST}}\)
+
+\(\newcommand {\SSR }{\mathrm {SSR}}\)
+
+\(\newcommand {\MSE }{\mathrm {MSE}}\)
+
+\(\newcommand {\RMSE }{\mathrm {RMSE}}\)
+
+\(\newcommand {\toprule }[1][]{\hline }\)
+
+\(\let \midrule \toprule \)
+
+\(\let \bottomrule \toprule \)
+
+\(\def \LWRbooktabscmidruleparen (#1)#2{}\)
+
+\(\newcommand {\LWRbooktabscmidrulenoparen }[1]{}\)
+
+\(\newcommand {\cmidrule }[1][]{\ifnextchar (\LWRbooktabscmidruleparen \LWRbooktabscmidrulenoparen }\)
+
+\(\newcommand {\morecmidrules }{}\)
+
+\(\newcommand {\specialrule }[3]{\hline }\)
+
+\(\newcommand {\addlinespace }[1][]{}\)
+
+\(\newcommand {\LWRsubmultirow }[2][]{#2}\)
+
+\(\newcommand {\LWRmultirow }[2][]{\LWRsubmultirow }\)
+
+\(\newcommand {\multirow }[2][]{\LWRmultirow }\)
+
+\(\newcommand {\mrowcell }{}\)
+
+\(\newcommand {\mcolrowcell }{}\)
+
+\(\newcommand {\STneed }[1]{}\)
+
+\(\newcommand {\tcbset }[1]{}\)
+
+\(\newcommand {\tcbsetforeverylayer }[1]{}\)
+
+\(\newcommand {\tcbox }[2][]{\boxed {\text {#2}}}\)
+
+\(\newcommand {\tcboxfit }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcblower }{}\)
+
+\(\newcommand {\tcbline }{}\)
+
+\(\newcommand {\tcbtitle }{}\)
+
+\(\newcommand {\tcbsubtitle [2][]{\mathrm {#2}}}\)
+
+\(\newcommand {\tcboxmath }[2][]{\boxed {#2}}\)
+
+\(\newcommand {\tcbhighmath }[2][]{\boxed {#2}}\)
+
+\(\require {colortbl}\)
+
+\(\let \LWRorigcolumncolor \columncolor \)
+
+\(\renewcommand {\columncolor }[2][named]{\LWRorigcolumncolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigrowcolor \rowcolor \)
+
+\(\renewcommand {\rowcolor }[2][named]{\LWRorigrowcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+\(\let \LWRorigcellcolor \cellcolor \)
+
+\(\renewcommand {\cellcolor }[2][named]{\LWRorigcellcolor [#1]{#2}\LWRabsorbtwooptions }\)
+
+</div>
+
+<!--
+...... section Color ......
+-->
+<h4 id="autosec-27"><span class="sectionnumber">5&#x2003;</span>Color</h4>
+<a id="plotting-autopage-27"></a>
+<a id="plotting-autofile-5"></a>
+
+<a id="sec-app-plot-color"></a>
+
+<p>
+Color buys three no other channel offers at the same price:
+</p>
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> it calls attention to one mark among hundreds without enlarging it or moving it,
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> it gives a figure something to be remembered by,
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> it adds a dimension to a page that has only two.
+</p>
+</li>
+</ul>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #9999FF; border-bottom:                 1px solid #9999FF; background:   #9999FF; color:   #FFFFFF; "
+>
+
+<p>
+Color is the easiest channel to misuse
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Colors always produce a picture and the picture always looks like data.
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Which part of a color can be ranked ......
+-->
+<h5 id="autosec-28"><span class="sectionnumber">5.1&#x2003;</span>Which part of a color can be ranked</h5>
+<a id="plotting-autopage-28"></a>
+
+
+<a id="sec-app-plot-colorspace"></a>
+
+<p>
+A color in a figure is three numbers: how much red, how much green and how much blue the screen mixes. Each runs from \(0\) to \(1\), or equivalently from \(0\) to \(255\), so every color a figure can use is a point in the box of
+Fig.&nbsp;<a href="node-5.html#fig-plot-rgbcube">5.1</a> — black at the origin where all three are \(0\), white at the opposite corner where all three are \(1\), and the grays on the diagonal between them, where the three
+are equal.
+</p>
+
+<figure id="autoid-8" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_rgbcube.svg" target="_blank" ><img
+    src="figs/plot_rgbcube.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.1: The RGB cube: every color a figure can use, as a point in the box of the three numbers. The eight corners are black, white and the six pure mixes; the dashed diagonal, where \(R=G=B\), carries the grays from
+black to white. The two labeled corners give the three numbers in their usual written form.
+
+</div>
+
+<a id="fig-plot-rgbcube"></a>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #9999FF; border-bottom:              1px solid #9999FF; background:            #9999FF; color:   #FFFFFF; "
+>
+
+<p>
+Hex codes
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+The same three numbers are almost always written as six hexadecimal digits, two per channel, running from <kbd>00</kbd> to <kbd>FF</kbd>: <kbd>#000000</kbd> is black, <kbd>#FFFFFF</kbd> white, <kbd>#FF0000</kbd>
+red, <kbd>#808080</kbd> mid gray, and <kbd>#1F77B4</kbd> is the blue <kbd>matplotlib</kbd> draws its first line in. Every plotting library, style file and web page accepts this form, and it is the form in which a palette should
+be recorded — a color called “blue” is a different color in every tool, while <kbd>#1F77B4</kbd> is not.
+</p>
+</div>
+
+</div>
+
+<p>
+Two colors written that way are two points in the cube, so how far apart they are is the straight line between them,
+</p>
+
+<span class="hidden"> \(\seteqnumber{0}{5.}{0}\)</span>
+
+<!--
+
+
+                                                                                                                                                                                 (5.1)--><a id="eq-plot-rgb-distance"></a><!--
+                                                                       p
+                                                                  d=       (R1 − R2 )2 + (G1 − G2 )2 + (B1 − B2 )2 ,
+
+-->
+
+<p>
+
+\begin{equation}
+d = \sqrt {(R_1-R_2)^2 + (G_1-G_2)^2 + (B_1-B_2)^2} , \label {eq-plot-rgb-distance}
+\end{equation}
+
+</p>
+
+<p>
+with \(d=0\) for one color written twice and, at the other extreme, \(d=\sqrt {3}\approx 1.73\) for black against white, the diagonal of the cube. Equal steps of \(d\) are not equally visible, so it is a poor measure of
+<i>how</i> different two colors look. What it does answer is whether they are distinct at all, which is what a palette of several colors has to guarantee.
+</p>
+
+<p>
+What a figure keeps when it is printed in black and white is computable from the three numbers, \(g = 0.21R + 0.72G + 0.07B\), with \(g=0\) for black and \(g=1\) for white. It is called the <em>gray level</em> here. The
+approximation is the quantity of interest, because it is what a black-and-white printer or a photocopier actually delivers.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:              1px solid #BF6000; background:            #BF6000; color:   #FFFFFF; "
+>
+
+<p>
+Print it in gray
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Any figure may be printed in black and white, projected badly, or photocopied. <em>Test</em> a figure in gray, not draw it in gray.
+</p>
+</div>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:              1px solid #BF6000; background:            #BF6000; color:   #FFFFFF; "
+>
+
+<p>
+Dark-to-light ranking
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Only dark-to-light can be ranked. Darker and lighter form a scale a reader orders without being told the rule.
+</p>
+</div>
+
+</div>
+
+<p>
+Fig.&nbsp;<a href="node-5.html#fig-plot-colorsort">5.2</a> is what that sentence means operationally. Eight values are encoded dark to light and shown three times: shuffled, in their true order, and as the gray a
+black-and-white print would keep.
+</p>
+
+<figure id="autoid-9" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_colorsort.svg" target="_blank" ><img
+    src="figs/plot_colorsort.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.2: Eight values encoded dark to light. (a) Shuffled: the row can be put back in order by eye, without being told which end is large. (b) The true order. (c) The same eight values as the gray a black-and-white print
+keeps, falling steadily from \(0.90\) to \(0.21\). Sorting on that gray level recovers the true order exactly, which is the same operation the reader performs in (a).
+
+</div>
+
+<a id="fig-plot-colorsort"></a>
+
+</div>
+
+</figure>
+
+<p>
+An ordered quantity therefore needs an ordered channel. If the reader must rank, compare or interpolate, the value has to move the marks from dark to light; if the reader must only tell one thing from another, a different color is
+exactly the right answer.
+</p>
+<!--
+...... subsection Color and grayscale are judged in context ......
+-->
+<h5 id="autosec-31"><span class="sectionnumber">5.2&#x2003;</span>Color and grayscale are judged in context</h5>
+<a id="plotting-autopage-31"></a>
+
+
+<a id="sec-app-plot-context"></a>
+
+<p>
+The eye does not measure a color, it compares one. Every patch is reported relative to what surrounds it, so the same ink can be read as two different quantities in two places on the same page. Fig.&nbsp;<a
+href="node-5.html#fig-plot-graycontrast">5.3</a> is the demonstration, and it uses no color at all.
+</p>
+
+<figure id="autoid-10" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_graycontrast.svg" target="_blank" ><img
+    src="figs/plot_graycontrast.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.3: Gray in context. (a) Five squares, every one of them painted the identical \(\mathrm {RGB}=(0.50,0.50,0.50)\), placed along a ramp running from black to white. They appear to darken steadily from left to
+right, and the third square, which sits exactly where the ramp reaches its own value, disappears. (b) The same five squares on a uniform field, where they are visibly one color; the only thing that differed between them in (a) is what
+lay behind them, which runs from \(0.10\) to \(0.90\).
+
+</div>
+
+<a id="fig-plot-graycontrast"></a>
+
+</div>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:              #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Gray is a poor default rather than a safe one (Fig.&nbsp;<a href="node-5.html#fig-plot-graycontrast">5.3</a>).
+</p>
+</div>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:              #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A shade is only comparable to another shade on the same background.
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Colormaps ......
+-->
+<h5 id="autosec-33"><span class="sectionnumber">5.3&#x2003;</span>Colormaps</h5>
+<a id="plotting-autopage-33"></a>
+<div class="amsthmbodygoal">
+
+<ul class="list" style="list-style-type:none">
+
+
+<li>
+<p>
+<span class="listmarker"><a id="plotting-autopage-34"></a>
+<b>Goal:</b> </span> What color for this number?
+</p>
+
+
+</li>
+
+</ul>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:           #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #9999FF; border-bottom:            1px solid #9999FF; background:       #9999FF; color:     #FFFFFF; "
+>
+
+<p>
+Colormap
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A <em>colormap</em> is a function from a scalar to a color, \(m:[0,1]\to (R,G,B)\), applied after the data has been normalized onto \([0,1]\).
+</p>
+</div>
+
+</div>
+
+<p>
+What separates one colormap from another is how the gray level \(g\) of Sec.&nbsp;<a href="node-5.html#sec-app-plot-colorspace">5.1</a> runs along the map, from one end to the other, and the requirement follows from
+what the map is being asked to encode. A sequential map has to get lighter throughout, because the reader must be able to rank any two values it produces. A diverging map has to turn exactly once, at the value its center is
+pinned to, which is what makes it read as a distance from that center. A map that turns anywhere else puts an edge on the page where the data has none. Fig.&nbsp;<a href="node-5.html#fig-plot-cmap-gray">5.4</a> shows
+four maps against that requirement.
+</p>
+
+<figure id="autoid-11" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_cmap_gray.svg" target="_blank" ><img
+    src="figs/plot_cmap_gray.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.4: Four colormaps, each as the reader sees it and as the gray it prints as. (a) <kbd>viridis</kbd> and (b) <kbd>magma</kbd> get lighter throughout, over \(0.08\) to \(0.87\) and \(0.00\) to \(0.97\), so either
+can carry a magnitude. (c) <kbd>coolwarm</kbd> is lightest in the middle and darkens to both ends, which is the center it is built around and not a fault. (d) <kbd>jet</kbd> covers \(0.04\) to \(0.92\) and does neither: it is
+lightest near the middle, dark at both ends, and reverses on the way.
+
+</div>
+
+<a id="fig-plot-cmap-gray"></a>
+
+</div>
+
+</figure>
+
+<p>
+The gray rows are hard to compare bar against bar, so Fig.&nbsp;<a href="node-5.html#fig-plot-cmap-curve">5.5</a> draws the same four gray levels as curves, one against the other.
+</p>
+
+<figure id="autoid-12" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_cmap_curve.svg" target="_blank" ><img
+    src="figs/plot_cmap_curve.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.5: The gray level of the four maps of Fig.&nbsp;<a href="node-5.html#fig-plot-cmap-gray">5.4</a>, against position along the map, with the <kbd>gray</kbd> map itself as the dashed straight line.
+<kbd>viridis</kbd> and <kbd>magma</kbd> climb without turning. <kbd>coolwarm</kbd> turns once, at position \(0.50\). <kbd>jet</kbd> turns three times, the last at \(0.64\), after which it darkens again toward its own
+maximum. The steps are also uneven, measured as \(\mathrm {std}\lvert \Delta g\rvert / \mathrm {mean}\lvert \Delta g\rvert \) along the map: \(0.20\) for <kbd>viridis</kbd> against \(0.69\) for <kbd>jet</kbd>,
+so equal steps in the data do not arrive as equal steps of gray on the page.
+
+</div>
+
+<a id="fig-plot-cmap-curve"></a>
+
+</div>
+
+</figure>
+
+<p>
+The rainbow colormaps, of which <kbd>jet</kbd> is the most common, fail this test outright. Fig.&nbsp;<a href="node-5.html#fig-plot-colormap">5.6</a> shows what the failure does to a field, by reducing each map to the
+gray it prints as.
+</p>
+
+<figure id="autoid-13" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_colormap.svg" target="_blank" ><img
+    src="figs/plot_colormap.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.6: Three colormaps, each shown in color and as the gray a black-and-white print leaves. (a) and (b): <kbd>jet</kbd>, turns around three times on the way, so the peak comes out <i>dark</i> and a bright false ring
+appears around it. (c) and (d): <kbd>viridis</kbd>, which only ever gets lighter over the same range. (e) and (f): <kbd>viridis_r</kbd>, the same map run backwards, which never stops getting <em>darker</em> and is therefore
+just as rankable, with the peak now the darkest ink on the page. Every panel carries its own colorbar, over a field normalized to \([0,1]\), and the bar of a gray panel is the gray that map prints as: the bar of (b) is dark at both
+ends and light in the middle, where those of (d) and (f) run one way from end to end.
+
+</div>
+
+<a id="fig-plot-colormap"></a>
+
+</div>
+
+</figure>
+
+<p>
+The dark blob in Fig.&nbsp;<a href="node-5.html#fig-plot-colormap">5.6</a>(b) is at the maximum of the field. That inversion, and the bright ring the eye reads as a boundary, are artifacts of the colormap, not features of
+the data. A map such as <kbd>viridis</kbd>, <kbd>magma</kbd> or <kbd>cividis</kbd> avoids them by construction: it is built so that equal steps in the data look like equal steps to the reader, and so that it never stops
+getting lighter.
+</p>
+<!--
+......   paragraph jet colormap ......
+-->
+
+
+<p>
+<span class="paragraph" id="autosec-38"><kbd>jet</kbd> colormap</span>
+<a id="plotting-autopage-38"></a>
+Why, then, is it still everywhere? Almost never because anyone chose it.
+</p>
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> Was the MATLAB default until R2014b and the <kbd>matplotlib</kbd> default until version&nbsp;2.0, so every script and every figure written before those releases is <kbd>jet</kbd> by
+omission, and copied code carries the choice forward without ever restating it.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Instrument software keeps it alive on its own: spectrum analyzers, thermal cameras, Doppler ultrasound, and seismic and weather displays ship it, often with no setting to change it.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> When a field has trained its readers on a fixed color-to-meaning mapping, or a figure must sit beside an archive drawn the same way, changing the map breaks the comparison the figure exists
+to support.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> The three turns of Fig.&nbsp;<a href="node-5.html#fig-plot-cmap-curve">5.5</a> put visible bands and edges on the image, and in color, at full brightness, that extra structure reads
+as detail rather than as damage; the author sees a sharp picture, and only the reader of the printed version sees Fig.&nbsp;<a href="node-5.html#fig-plot-colormap">5.6</a>(b).
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> Color also names a value well even though it ranks values badly. “The red region” is easy to say and easy to match against a colorbar, so reading one value off the figure feels accurate.
+</p>
+</li>
+</ul>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:            #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #9999FF; border-bottom:              1px solid #9999FF; background:        #9999FF; color:     #FFFFFF; "
+>
+
+<p>
+Inherited, not chosen
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+<kbd>jet</kbd> on a figure is almost always a default nobody revisited. Change it, unless the figure has to be read against an archive drawn the same way, and (optionaly) say so in the caption.
+</p>
+</div>
+
+</div>
+<!--
+...... subsection Schemes ......
+-->
+<h5 id="autosec-39"><span class="sectionnumber">5.4&#x2003;</span>Schemes</h5>
+<a id="plotting-autopage-39"></a>
+
+
+<a id="sec-app-plot-colormap-scheme"></a>
+<div class="amsthmbodygoal">
+
+<ul class="list" style="list-style-type:none">
+
+
+<li>
+<p>
+<span class="listmarker"><a id="plotting-autopage-40"></a>
+<b>Goal:</b> </span> Which colors for these categories?
+</p>
+
+
+</li>
+
+</ul>
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #9999FF; background:            #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #9999FF; border-bottom:             1px solid #9999FF; background:        #9999FF; color:    #FFFFFF; "
+>
+
+<p>
+Scheme
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+A <em>scheme</em>, or <em>palette</em>, is a short fixed list of colors chosen as a set, \(\{c_1,\dots ,c_k\}\).
+</p>
+</div>
+
+</div>
+
+<p>
+Colormaps and schemes are convertible, which is why the words get swapped: sampling a colormap at \(k\) points produces a scheme, and interpolating between the entries of a scheme produces a colormap. The first direction is
+routine for the ordered families below, and is how most sequential schemes are obtained. The second is not, because interpolating between unordered categories produces colors that stand for nothing.
+</p>
+<!--
+...... subsubsection Choosing a scheme ......
+-->
+<h6 id="autosec-41"><span class="sectionnumber">5.4.1&#x2003;</span>Choosing a scheme</h6>
+<a id="plotting-autopage-41"></a>
+
+
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> <em>Sequential</em>, one color running light to dark, for a quantity with a low end and a high end: counts, magnitudes, probabilities, densities. Its \(k\) colors are a sequential colormap cut
+into \(k\) classes.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <em>Diverging</em>, two colors meeting at a neutral middle, for a quantity with a meaningful center: residuals and errors around zero, correlations, differences between two models. The
+middle must be pinned to the meaningful value, or the map asserts a center where none exists.
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> <em>Qualitative</em>, different colors of similar darkness, for unordered categories: class labels, model names, cluster identities. Six to eight is the practical ceiling; past that, the colors stop
+being distinguishable and direct labeling is the answer.
+</p>
+</li>
+</ul>
+
+<p>
+An excellent source of schemes is Cynthia Brewer’s picker at <a href="https://colorbrewer2.org" target="_blank" >https://colorbrewer2.org</a>, most of which ships with <kbd>matplotlib</kbd> under the same
+names.<sup>2</sup>
+</p>
+
+<p>
+Fig.&nbsp;<a href="node-5.html#fig-plot-schemes">5.7</a> shows two schemes from each family with its gray beneath, which turns the choice from a matter of taste into a matter of shape.
+</p>
+
+<figure id="autoid-14" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_schemes.svg" target="_blank" ><img
+    src="figs/plot_schemes.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.7: Two ColorBrewer schemes from each family, each drawn as the \(k\) fixed colors it is, in color and as the gray it prints as. (a) and (b) Sequential, \(k=8\): the gray only ever moves one way. (c) and (d) Diverging,
+\(k=7\), an odd count so that the neutral class is a color of its own rather than a boundary between two: the gray is lightest at that middle class, at position \(0.50\) of the map in both, and darkens to both ends, so the scheme
+reads as a distance from a center. (e) and (f) Qualitative, \(k=8\): the gray is deliberately almost flat, so the categories separate by color and none of them looks larger than another.
+
+</div>
+
+<a id="fig-plot-schemes"></a>
+
+</div>
+
+</figure>
+
+<p>
+The gray rows also say what each family must not be used for. A sequential map has no center to put a zero on; a diverging map applied to a quantity with no meaningful center asserts one; and a qualitative map used for a
+magnitude leaves the reader nothing to rank with.
+</p>
+<div role="note" class="footnotes">
+
+<a id="plotting-autopage-43"></a>
+<p>
+<sup>2</sup>&nbsp;M.&nbsp;Harrower and C.&nbsp;A.&nbsp;Brewer, <a href="https://doi.org/10.1179/000870403235002042" target="_blank" >“ColorBrewer.org: An Online Tool for Selecting Colour Schemes for
+Maps”</a>, <em>The Cartographic Journal</em>, vol.&nbsp;40, no.&nbsp;1, 2003, pp.&nbsp;27–37. The tool also filters on colorblind-safe, print-safe and photocopy-safe, which is the check of Sec.&nbsp;<a
+href="node-5.html#sec-app-plot-checks">5.5</a> applied before the figure exists rather than after.
+</p>
+
+
+</div>
+<!--
+...... subsection Color deficiency ......
+-->
+<h5 id="autosec-44"><span class="sectionnumber">5.5&#x2003;</span>Color deficiency</h5>
+<a id="plotting-autopage-44"></a>
+
+
+<a id="sec-app-plot-checks"></a>
+
+<p>
+The deficiency is not one condition. Fig.&nbsp;<a href="node-5.html#fig-plot-cvd-types">5.8</a> passes the visible spectrum through each common form, and Table&nbsp;<a href="node-5.html#tab-plot-cvd">5.1</a>
+gives how frequent each one is.
+</p>
+
+<figure id="autoid-15" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_cvd_types.svg" target="_blank" ><img
+    src="figs/plot_cvd_types.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.8: The visible spectrum as each common form of color vision deficiency receives it. The bar approximates the spectrum and is not a colorimetric reference.
+
+</div>
+
+<a id="fig-plot-cvd-types"></a>
+
+</div>
+
+</figure>
+
+<figure id="autoid-16" class="table ">
+
+
+<div class="figurecaption">
+Table&nbsp;5.1: How common each form is, among people of Northern European ancestry, in the row order of Fig.&nbsp;<a href="node-5.html#fig-plot-cvd-types">5.8</a>. The red-green forms of the first four rows reach
+about \(8\%\) of men, two orders of magnitude above the blue-yellow forms below them.
+
+</div>
+
+<a id="tab-plot-cvd"></a>
+<table>
+
+<tr style="display:none"><th>.</th></tr>
+
+<tr class="tbrule">
+<td class="tdl tvertbarr" style="border-right: 1px solid black">Form</td>
+<td colspan="2" class="tdc tvertbarr" style="border-right: 1px solid black">Men</td>
+<td colspan="2" class="tdc">Women</td>
+</tr>
+
+<tr class="hline">
+<td class="tdl tvertbarr" style="border-right:         1px solid black">Deuteranomaly</td>
+<td class="tdr">5</td>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">&percnt;</td>
+<td class="tdr">0</td>
+<td class="tdl">.35&percnt;</td>
+</tr>
+
+<tr>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">Protanomaly</td>
+<td class="tdr">1</td>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">.3&percnt;</td>
+<td class="tdr">0</td>
+<td class="tdl">.02&percnt;</td>
+</tr>
+
+<tr>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">Protanopia</td>
+<td class="tdr">1</td>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">.3&percnt;</td>
+<td class="tdr">0</td>
+<td class="tdl">.02&percnt;</td>
+</tr>
+
+<tr>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">Deuteranopia</td>
+<td class="tdr">1</td>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">.2&percnt;</td>
+<td class="tdr">0</td>
+<td class="tdl">.01&percnt;</td>
+</tr>
+
+<tr>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">Tritanopia</td>
+<td class="tdr">0</td>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">.008&percnt;</td>
+<td class="tdr">0</td>
+<td class="tdl">.008&percnt;</td>
+</tr>
+
+<tr>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">Tritanomaly</td>
+<td class="tdr">0</td>
+<td class="tdl tvertbarr" style="border-right:         1px solid black">.0001&percnt;</td>
+<td class="tdr">0</td>
+<td class="tdl">.0001&percnt;</td>
+</tr>
+
+<tr class="tbrule" aria-hidden="true">
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdl"></td>
+<td class="tdr"></td>
+<td class="tdl"></td>
+</tr>
+</table>
+
+</figure>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #B20000; background:           #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #B20000; border-bottom:            1px solid #B20000; background:         #B20000; color:   #FFFFFF; "
+>
+
+<p>
+Red-green pair
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Never let a <b>red-green pair</b> be the only thing separating two series.
+</p>
+
+<p>
+Red-green deficiency affects roughly \(8\%\) of men of Northern European ancestry and \(0.4\%\) of women.
+</p>
+</div>
+
+</div>
+
+<p>
+Fig.&nbsp;<a href="node-5.html#fig-plot-cvd">5.9</a> runs the same simulation on one chart drawn with two palettes.<sup>3</sup><a id="plotting-autopage-46"></a> The data, the layout and the legend are identical in
+the two rows, so whatever separates them is the palette alone.
+</p>
+
+<figure id="autoid-17" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_cvd.svg" target="_blank" ><img
+    src="figs/plot_cvd.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.9: One four-series chart under two palettes, each shown in normal vision and under simulated deuteranopia. (c) <i>Okabe-Ito</i> palette. (d) all four series stay separable.
+
+</div>
+
+<a id="fig-plot-cvd"></a>
+
+</div>
+
+</figure>
+
+<p>
+The palette of the lower row is not an invention of that figure. Fig.&nbsp;<a href="node-5.html#fig-plot-okabeito">5.10</a> gives it in full: eight colors chosen so that no two of them merge under any common form of
+deficiency, published with a name and a code for each so that a figure can be specified in them.
+</p>
+
+<figure id="autoid-18" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_okabeito.svg" target="_blank" ><img
+    src="figs/plot_okabeito.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.10: The Okabe-Ito qualitative palette, with the name and the hex code of every color. (a) As seen. (b) The same eight under simulated deuteranopia. The closest pair of (a), orange and vermillion, separates by
+\(0.263\) in RGB; the closest pair of (b), bluish green and reddish purple, still separates by \(0.202\), so the eight stay tellable apart. Source: Okabe and Ito, <em>Color Universal Design</em> (2008), tabulated in Wong (2011).
+
+</div>
+
+<a id="fig-plot-okabeito"></a>
+
+</div>
+
+</figure>
+<div role="note" class="footnotes">
+
+<a id="plotting-autopage-49"></a>
+<p>
+<sup>3</sup>&nbsp;Both figures simulate deficiency after Machado, Oliveira and Fernandes, <a href="https://doi.org/10.1109/TVCG.2009.113" target="_blank" >“A Physiologically-based Model for Simulation of Color
+Vision Deficiency”</a>, <em>IEEE Trans. Visualization and Computer Graphics</em>, vol.&nbsp;15, no.&nbsp;6, 2009, pp.&nbsp;1291–1298. In Fig.&nbsp;<a href="node-5.html#fig-plot-cvd">5.9</a> it is applied to the
+rendered pixels of the chart, so the legend keys degrade exactly as the lines do. Fig.&nbsp;<a href="node-5.html#fig-plot-cvd-types">5.8</a> redraws <a
+href="https://commons.wikimedia.org/wiki/File:Color_blindness.svg" target="_blank" >“Color blindness”</a> by SyntaxTerror, Public domain, via Wikimedia Commons, and Table&nbsp;<a
+href="node-5.html#tab-plot-cvd">5.1</a> follows the epidemiology table of Wikipedia contributors, <a href="https://en.wikipedia.org/w/index.php?title=Color_blindness&amp;oldid=1368875735" target="_blank"
+>“Color blindness”</a>, <em>Wikipedia, The Free Encyclopedia</em>, revision of 11&nbsp;August 2026, retrieved 18&nbsp;August 2026.
+</p>
+
+
+</div>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:               1px solid #BF6000; background:        #BF6000; color:   #FFFFFF; "
+>
+
+<p>
+Okabe-Ito
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Eight colors that survive every common deficiency, in the order they are published: <kbd>#000000</kbd>, <kbd>#E69F00</kbd>, <kbd>#56B4E9</kbd>, <kbd>#009E73</kbd>, <kbd>#F0E442</kbd>, <kbd>#0072B2</kbd>,
+<kbd>#D55E00</kbd>, <kbd>#CC79A7</kbd>. Take them in that order and stop when the figure has enough; four of them are Fig.&nbsp;<a href="node-5.html#fig-plot-cvd">5.9</a>(c).
+</p>
+</div>
+
+</div>
+
+<p>
+A figure that survives <i>both</i> black and white print and vision deficiency simulation is legible to almost everyone.
+</p>
+
+
+<div
+    class="tcolorbox"
+    style=" border: 1px solid #BF6000; background:             #F2F2F2; "
+>
+
+
+<div
+    class="tcolorboxtitle"
+    style=" border-top: 1px solid #BF6000; border-bottom:               1px solid #BF6000; background:        #BF6000; color:   #FFFFFF; "
+>
+
+<p>
+Double encoding
+</p>
+</div>
+
+
+<div
+    class="tcolorboxupper"
+    style=" color: #000000; "
+>
+
+<p>
+Use <i>double encoding</i> whenever a distinction matters: give the series different:
+</p>
+<ul class="itemize" style="list-style-type:none">
+
+<li>
+<p>
+<span class="listmarker">•</span> line styles or markers,
+</p>
+
+</li>
+<li>
+
+<p>
+<span class="listmarker">•</span> colors.
+</p>
+</li>
+</ul>
+
+</div>
+
+</div>
+<!--
+...... subsection Color Meaning ......
+-->
+<h5 id="autosec-50"><span class="sectionnumber">5.6&#x2003;</span>Color Meaning</h5>
+<a id="plotting-autopage-50"></a>
+
+
+<a id="sec-app-plot-meaning"></a>
+<!--
+...... subsubsection Social aspects ......
+-->
+<h6 id="autosec-51"><span class="sectionnumber">5.6.1&#x2003;</span>Social aspects</h6>
+<a id="plotting-autopage-51"></a>
+
+
+<p>
+Finally, color carries meaning that the data may not intend. Red reads as loss, danger or failure and green as the opposite, and the reader applies that mapping before reading the axis. A figure that assigns the colors the other way
+is not merely unhelpful, it is asserting something about every mark on the page that the numbers contradict. Fig.&nbsp;<a href="node-5.html#fig-plot-semantic">5.11</a> puts one record through both assignments.
+</p>
+
+<figure id="autoid-19" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_semantic.svg" target="_blank" ><img
+    src="figs/plot_semantic.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.11: Twelve quarters of an operating result, drawn twice from the same numbers on the same zero baseline. (a) Profit in red and loss in green: all \(12\) bars carry a color that contradicts their own sign, \(8\) profits
+in red and \(4\) losses in green, and the reader has to override the color on every one of them. (b) Profit in blue and loss in red, where none does. The positive side is blue rather than green because <i>red-green</i> is the pair that
+roughly \(8\%\) of men cannot separate (Sec.&nbsp;<a href="node-5.html#sec-app-plot-checks">5.5</a>), so only the negative side keeps the conventional red.
+
+</div>
+
+<a id="fig-plot-semantic"></a>
+
+</div>
+
+</figure>
+<!--
+...... subsubsection One strong color ......
+-->
+<h6 id="autosec-53"><span class="sectionnumber">5.6.2&#x2003;</span>One strong color</h6>
+<a id="plotting-autopage-53"></a>
+
+
+<p>
+Strong color is a budget. Spend it on the one series, region or mark the text is about, draw everything else in gray at \(20\) to \(40\%\) ink, and let the reader find the subject pre-attentively, by the mechanism of Fig.&nbsp;<a
+href="node-4.html#fig-plot-preattentive">4.2</a>, without being told where to look. Fig.&nbsp;<a href="node-5.html#fig-plot-highlight">5.12</a> spends the budget both ways.
+</p>
+
+<figure id="autoid-20" class="figure ">
+<div class="center">
+
+<p>
+
+<a href="figs/plot_highlight.svg" target="_blank" ><img
+    src="figs/plot_highlight.svg"
+    class="inlineimage"
+    alt="(image)"
+></a>
+</p>
+
+
+<div class="figurecaption">
+Figure&nbsp;5.12: Twelve validation curves on identical axes. (a) All twelve at full strength, and \(12\) legend keys are needed to name them. (b) Eleven dropped to gray \(0.72\), which is \(28\%\) ink, against one at \(0.37\),
+or \(63\%\) ink: a contrast of \(0.35\) that makes the highlighted curve the only thing the eye lands on. It is named at its own end, so the panel needs no key at all.
+
+</div>
+
+<a id="fig-plot-highlight"></a>
+
+</div>
+
+</figure>
+
+</section>
+
+</main>
+
+
+<nav class="botnavigation"><a href="index.html" class="linkhome" >
+Home</a></nav>
+
+</div><!-- grid -->
+</body>
+</html>

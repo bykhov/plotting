@@ -1,0 +1,210 @@
+\usepackage{amsmath,amsthm,amssymb,mathrsfs,amsfonts,bm, bbm}
+\usepackage{physics}
+\usepackage{cancel}
+
+%\usepackage{mathtools}
+\let\Re\undefined
+\let\Im\undefined
+\DeclareMathOperator{\Re}{\mathscr{R}}
+\DeclareMathOperator{\Im}{\mathscr{I}}
+%https://tex.stackexchange.com/questions/1372/typeset-reaib
+
+\newtheorem{theorem}{Theorem}
+
+
+% https://tex.stackexchange.com/questions/54846/under-up-arrow-text
+\newcommand*{\underuparrow}[1]{{\underset{\uparrow}{#1}}} \CustomizeMathJax{\newcommand{\underuparrow}[1]{{\underset{\uparrow}{#1}}}}
+
+
+%%% --- Configurations ---
+%https://tex.stackexchange.com/questions/36039/automatic-size-adjustment-for-nested-parentheses
+\delimitershortfall=-1pt
+
+%https://tex.stackexchange.com/questions/51682/is-it-possible-to-pagebreak-aligned-equations
+\allowdisplaybreaks
+
+%%% --- Definitions ---
+\DeclareMathOperator*{\argmax}{argmax}
+\CustomizeMathJax{\DeclareMathOperator*{\argmax}{argmax}}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\CustomizeMathJax{\DeclareMathOperator*{\argmin}{arg\,min}}
+%\newcommand{\argmax}[1]{ \arg\,\max\limits_{#1}}
+%\newcommand{\argmin}[1]{ \arg\,\min\limits_{#1}}
+
+\newcommand{\floor}[1]{\lfloor #1 \rfloor}
+
+\CustomizeMathJax{%
+	\def\E[#1]{\mathbb{E}\!\left[ #1 \right]}%
+}
+
+
+\NewDocumentCommand\E{D(){}o}{%
+	{\mathbb{E}}^{#1}\!\left[{#2}\right]
+}
+%----
+\CustomizeMathJax{%
+	\def\Var[#1]{\operatorname{Var}\!\left[ #1 \right]}%
+}
+
+\NewDocumentCommand\Var{D(){}o}{%
+	{\mathrm{Var}}^{#1}\!\left[{#2}\right]
+}
+%----
+\CustomizeMathJax{%
+	\def\Cov[#1]{\operatorname{Cov}\!\left[ #1 \right]}%
+}
+
+\NewDocumentCommand\Cov{o}{%
+	\mathrm{Cov}\!\left[{#1}\right] %
+}
+\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\diag}{diag}
+%\overset{\displaystyle\mathscr F}{\Longleftrightarrow}
+\newcommand{\DTFTH}{ H \brk1{e^{j\omega}}}
+\newcommand{\DTFTX}{ X\brk1{e^{j\omega}}}
+\newcommand{\DFTtr}[1]{\mathrm{DFT}\left\{#1\right\}}
+\newcommand{\DTFTtr}[1]{\mathrm{DTFT}\left\{#1\right\}}
+\newcommand{\DTFTtrI}[1]{\mathrm{DTFT^{-1}}\left\{#1\right\}}
+\newcommand{\Ftr}[1]{ \mathcal{F}\left\{#1\right\}}
+\newcommand{\FtrI}[1]{ \mathcal{F}^{-1}\left\{#1\right\}}
+
+\newcommand{\SSE}{\mathrm{SSE}}
+\newcommand{\SST}{\mathrm{SST}}
+\newcommand{\SSR}{\mathrm{SSR}}
+\newcommand{\MSE}{\mathrm{MSE}}
+\newcommand{\RMSE}{\mathrm{RMSE}}
+
+\newcommand{\Zover}{\overset{\mathscr Z}{\Longleftrightarrow}}
+\renewcommand{\real}{\mathbb{R}}
+\newcommand{\ba}{\mathbf{a}}
+\newcommand{\bb}{\mathbf{b}}
+\newcommand{\bc}{\mathbf{c}}
+\newcommand{\bd}{\mathbf{d}}
+\newcommand{\be}{\mathbf{e}}
+\newcommand{\bf}{\mathbf{f}}
+\newcommand{\bg}{\mathbf{g}}
+\newcommand{\bh}{\mathbf{h}}
+\newcommand{\bi}{\mathbf{i}}
+\newcommand{\bn}{\mathbf{n}}
+\newcommand{\bo}{\mathbf{o}}
+\newcommand{\bp}{\mathbf{p}}
+\newcommand{\bq}{\mathbf{q}}
+\newcommand{\br}{\mathbf{r}}
+\newcommand{\bs}{\mathbf{s}}
+\newcommand{\bt}{\mathbf{t}}
+\newcommand{\bu}{\mathbf{u}}
+\newcommand{\bv}{\mathbf{v}}
+\newcommand{\bw}{\mathbf{w}}
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bxx}{\mathbf{xx}}
+\newcommand{\bxy}{\mathbf{xy}}
+\newcommand{\by}{\mathbf{y}}
+\newcommand{\byx}{\mathbf{yx}}
+\newcommand{\byy}{\mathbf{yy}}
+\newcommand{\bz}{\mathbf{z}}
+
+\newcommand{\bA}{\mathbf{A}}
+\newcommand{\bB}{\mathbf{B}}
+\newcommand{\bC}{\mathbf{C}}
+\newcommand{\bD}{\mathbf{D}}
+\newcommand{\bH}{\mathbf{H}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\bK}{\mathbf{K}}
+\newcommand{\bM}{\mathbf{M}}
+\newcommand{\bP}{\mathbf{P}}
+\newcommand{\bQ}{\mathbf{Q}}
+\newcommand{\bR}{\mathbf{R}}
+\newcommand{\bS}{\mathbf{S}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\bW}{\mathbf{W}}
+\newcommand{\bX}{\mathbf{X}}
+\newcommand{\bY}{\mathbf{Y}}
+\newcommand{\bZ}{\mathbf{Z}}
+
+\newcommand{\balpha}{\bm{\alpha}}
+\newcommand{\bth}{{\bm{\theta}}}
+\newcommand{\bepsilon}{{\bm{\epsilon}}}
+\newcommand{\bmu}{{\bm{\mu}}}
+\newcommand{\bgamma}{{\bm{\gamma}}}
+\newcommand{\bphi}{\bm{\phi}}
+\newcommand{\bOne}{\mathbf{1}}
+\newcommand{\bZero}{\mathbf{0}}
+\newcommand{\indFunc}{\mathbbm{1}}
+\newcommand{\btx}{\tilde{\bx}}
+\newcommand{\loss}{\mathcal{L}}
+\newcommand{\score}{\mathcal{S}}
+
+\CustomizeMathJax{\newcommand{\floor}[1]{\lfloor #1 \rfloor}}
+\CustomizeMathJax{\newcommand{\DTFTH}{ H \brk1{e^{j\omega}}}}
+\CustomizeMathJax{\newcommand{\DTFTX}{ X\brk1{e^{j\omega}}}}
+\CustomizeMathJax{\newcommand{\DFTtr}[1]{\mathrm{DFT}\left\{#1\right\}}}
+\CustomizeMathJax{\newcommand{\DTFTtr}[1]{\mathrm{DTFT}\left\{#1\right\}}}
+\CustomizeMathJax{\newcommand{\DTFTtrI}[1]{\mathrm{DTFT^{-1}}\left\{#1\right\}}}
+\CustomizeMathJax{\newcommand{\Ftr}[1]{ \mathcal{F}\left\{#1\right\}}}
+\CustomizeMathJax{\newcommand{\FtrI}[1]{ \mathcal{F}^{-1}\left\{#1\right\}}}
+
+\CustomizeMathJax{\newcommand{\Zover}{\overset{\mathscr Z}{\Longleftrightarrow}}}
+\CustomizeMathJax{\renewcommand{\real}{\mathbb{R}}}
+\CustomizeMathJax{\newcommand{\ba}{\mathbf{a}}}
+\CustomizeMathJax{\newcommand{\bb}{\mathbf{b}}}
+\CustomizeMathJax{\newcommand{\bc}{\mathbf{c}}}
+\CustomizeMathJax{\newcommand{\bd}{\mathbf{d}}}
+\CustomizeMathJax{\newcommand{\be}{\mathbf{e}}}
+\CustomizeMathJax{\newcommand{\bf}{\mathbf{f}}}
+\CustomizeMathJax{\newcommand{\bg}{\mathbf{g}}}
+\CustomizeMathJax{\newcommand{\bh}{\mathbf{h}}}
+\CustomizeMathJax{\newcommand{\bi}{\mathbf{i}}}
+\CustomizeMathJax{\newcommand{\bn}{\mathbf{n}}}
+\CustomizeMathJax{\newcommand{\bo}{\mathbf{o}}}
+\CustomizeMathJax{\newcommand{\bp}{\mathbf{p}}}
+\CustomizeMathJax{\newcommand{\bq}{\mathbf{q}}}
+\CustomizeMathJax{\newcommand{\br}{\mathbf{r}}}
+\CustomizeMathJax{\newcommand{\bs}{\mathbf{s}}}
+\CustomizeMathJax{\newcommand{\bt}{\mathbf{t}}}
+\CustomizeMathJax{\newcommand{\bu}{\mathbf{u}}}
+\CustomizeMathJax{\newcommand{\bv}{\mathbf{v}}}
+\CustomizeMathJax{\newcommand{\bw}{\mathbf{w}}}
+\CustomizeMathJax{\newcommand{\bx}{\mathbf{x}}}
+\CustomizeMathJax{\newcommand{\bxx}{\mathbf{xx}}}
+\CustomizeMathJax{\newcommand{\bxy}{\mathbf{xy}}}
+\CustomizeMathJax{\newcommand{\by}{\mathbf{y}}}
+\CustomizeMathJax{\newcommand{\byx}{\mathbf{yx}}}
+\CustomizeMathJax{\newcommand{\byy}{\mathbf{yy}}}
+\CustomizeMathJax{\newcommand{\bz}{\mathbf{z}}}
+
+\CustomizeMathJax{\newcommand{\bA}{\mathbf{A}}}
+\CustomizeMathJax{\newcommand{\bB}{\mathbf{B}}}
+\CustomizeMathJax{\newcommand{\bC}{\mathbf{C}}}
+\CustomizeMathJax{\newcommand{\bD}{\mathbf{D}}}
+\CustomizeMathJax{\newcommand{\bH}{\mathbf{H}}}
+\CustomizeMathJax{\newcommand{\bI}{\mathbf{I}}}
+\CustomizeMathJax{\newcommand{\bK}{\mathbf{K}}}
+\CustomizeMathJax{\newcommand{\bM}{\mathbf{M}}}
+\CustomizeMathJax{\newcommand{\bP}{\mathbf{P}}}
+\CustomizeMathJax{\newcommand{\bQ}{\mathbf{Q}}}
+\CustomizeMathJax{\newcommand{\bR}{\mathbf{R}}}
+\CustomizeMathJax{\newcommand{\bS}{\mathbf{S}}}
+\CustomizeMathJax{\newcommand{\bU}{\mathbf{U}}}
+\CustomizeMathJax{\newcommand{\bW}{\mathbf{W}}}
+\CustomizeMathJax{\newcommand{\bX}{\mathbf{X}}}
+\CustomizeMathJax{\newcommand{\bY}{\mathbf{Y}}}
+\CustomizeMathJax{\newcommand{\bZ}{\mathbf{Z}}}
+
+\CustomizeMathJax{\newcommand{\balpha}{\bm{\alpha}}}
+\CustomizeMathJax{\newcommand{\bth}{{\bm{\theta}}}}
+\CustomizeMathJax{\newcommand{\bepsilon}{{\bm{\epsilon}}}}
+\CustomizeMathJax{\newcommand{\bmu}{{\bm{\mu}}}}
+\CustomizeMathJax{\newcommand{\bgamma}{{\bm{\gamma}}}}
+\CustomizeMathJax{\newcommand{\bphi}{\bm{\phi}}}
+\CustomizeMathJax{\newcommand{\bOne}{\mathbf{1}}}
+\CustomizeMathJax{\newcommand{\bZero}{\mathbf{0}}}
+\CustomizeMathJax{\newcommand{\indFunc}{\mathbb{1}}}
+\CustomizeMathJax{\newcommand{\btx}{\tilde{\bx}}}
+\CustomizeMathJax{\newcommand{\loss}{\mathcal{L}}}
+\CustomizeMathJax{\newcommand{\score}{\mathcal{S}}}
+
+\CustomizeMathJax{\newcommand{\SSE}{\mathrm{SSE}}}
+\CustomizeMathJax{\newcommand{\SST}{\mathrm{SST}}}
+\CustomizeMathJax{\newcommand{\SSR}{\mathrm{SSR}}}
+\CustomizeMathJax{\newcommand{\MSE}{\mathrm{MSE}}}
+\CustomizeMathJax{\newcommand{\RMSE}{\mathrm{RMSE}}}

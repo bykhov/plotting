@@ -1,0 +1,51 @@
+
+\usepackage{array}
+\newcolumntype{L}[1]{>{\raggedright\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{C}[1]{>{\centering\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+\newcolumntype{R}[1]{>{\raggedleft\let\newline\\\arraybackslash\hspace{0pt}}m{#1}}
+%https://tex.stackexchange.com/questions/12703/how-to-create-fixed-width-table-columns-with-text-raggedright-centered-raggedlef
+% lwarp parses tabular preambles itself and does not know that L/C/R take an
+% argument, so it miscounts columns and misplaces the | rules in the HTML output.
+% Register the HTML equivalents. Widths are irrelevant in HTML (cells wrap on
+% their own); only the type letter matters, as it picks the tdl/tdc/tdr class.
+% Use l/c/r rather than m{#1}: paragraph-mode columns make lwarp emit a <p>
+% inside each cell, which is not wanted for these one-paragraph cells.
+\HTMLnewcolumntype{L}[1]{l}
+\HTMLnewcolumntype{C}[1]{c}
+\HTMLnewcolumntype{R}[1]{r}
+
+\usepackage{url}
+
+%https://tex.stackexchange.com/questions/120777/more-than-two-figures-on-one-page-with-text-in-between-problem-with-float
+\renewcommand\textfraction{.1}
+\setcounter{totalnumber}{5}
+
+%	HEADERS AND FOOTERS
+\usepackage{fancyhdr} % Required for header and footer configuration
+\pagestyle{fancy} % Enable the custom headers and footers
+\renewcommand{\sectionmark}[1]{\markright{\normalsize\thesection\hspace{5pt}#1}{}} % Styling for the current section in the header
+\fancyhf{} % Clear default headers and footers
+\fancyhead[LE,RO]{\sffamily\normalsize\thepage} % Styling for the page number in the header
+%\fancyhead[LO]{\rightmark} % Print the nearest section name on the left side of odd pages
+%\fancyhead[RE]{\leftmark} % Print the current chapter name on the right side of even pages
+%\fancyfoot[C]{\thepage} % Uncomment to include a footer
+%https://tex.stackexchange.com/questions/327285/what-does-this-warning-mean-fancyhdr-and-headheight
+%\setlength{\headheight}{15pt}
+
+\renewcommand{\headrulewidth}{0.5pt} % Thickness of the rule under the header
+\fancypagestyle{plain}{% Style for when a plain pagestyle is specified
+	\fancyhead{}\renewcommand{\headrulewidth}{0pt}%
+}
+% Removes the header from odd empty pages at the end of chapters
+\makeatletter
+\renewcommand{\cleardoublepage}{
+	\clearpage\ifodd\c@page\else
+	\hbox{}
+	\vspace*{\fill}
+	\thispagestyle{empty}
+	\newpage
+	\fi}
+
+% compress the text up at the bottom of the page
+\raggedbottom 
+

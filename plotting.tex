@@ -1,0 +1,158 @@
+% TeX TXS-program:compile = txs:///pdflatex/[-shell-escape]
+\documentclass[a4paper,12pt,oneside]{scrartcl}
+\pdfminorversion=7
+\usepackage[a4paper,
+textheight = 700pt,
+marginparsep=0.5cm,
+textwidth=7in,
+marginparwidth=1cm]{geometry}
+
+\usepackage[mathjax,                     % Math via MathJax in HTML
+	HomeHTMLFilename=index,      % homepage filename
+	HTMLFilename={node-},         % per-page filename prefix
+	ImagesDirectory=main-images,
+	OSWindows,
+]{lwarp}
+\boolfalse{FileSectionNames}
+
+\HTMLTitle{Plotting}
+\HTMLAuthor{Dima Bykhovsky}
+\HTMLDescription{Plotting for engineers: visual perception, color and colormaps, choosing the encoding, axes, fonts, transparency, and figures inside a document.}
+\HTMLLanguage{en-US}
+\CSSFilename{lwarp_academic.css}
+% Section name first, document title appended: search engines truncate <title> at
+% roughly 65 characters, and the repeated title is the part worth losing.
+\HTMLTitleAfterSection
+\setcounter{FileDepth}{1}      % split HTML at \section
+\setcounter{SideTOCDepth}{2}   % side TOC depth
+\booltrue{CombineHigherDepths}
+
+\begin{warpMathJax}
+	\CustomizeMathJax{
+		\newcommand{\abs}[1]{\lvert#1\rvert}
+	}
+	\CustomizeMathJax{
+		\DeclareMathOperator{\sign}{sign}
+	}
+\end{warpMathJax}
+
+\input{conf_math}
+% lwarp reads the equation-number prefix from amsmath's \numberwithin bookkeeping;
+% without it MathJax tags every displayed equation with a bare "n".
+\numberwithin{equation}{section}
+\counterwithin{figure}{section}
+\counterwithin{table}{section}
+\usepackage{xurl}
+\usepackage{placeins}
+\usepackage{parskip}
+\usepackage{enumitem}
+\setlist[itemize]{noitemsep, nosep}
+\setlength\parindent{0pt}
+
+\input{config2}
+
+\usepackage{booktabs,multirow,array,float}
+\usepackage{tabularx}
+
+\usepackage{tcolorbox}
+\tcbuselibrary{skins,xparse,breakable}
+\usepackage{colortbl}
+\usepackage{subcaption}
+\captionsetup[subfigure]{position=bottom,justification=raggedright,singlelinecheck=false}
+\usepackage{graphicx}
+\graphicspath{{figs/}}
+
+\newtheoremstyle{goal}%
+{}{}%
+{}{}%
+{}%
+{}%
+{ }%
+{\textbf{\color{blue!50}#1}}
+\theoremstyle{goal}
+\newtheorem{goal}{Goal:}
+
+\renewcommand\qedsymbol{}
+\setlength{\topsep}{0pt}
+
+% Box environments: red = hard errors, yellow = caveats, blue = clarifications.
+\NewTColorBox{box_red}{ !O{} }{
+	breakable,
+	enhanced,
+	colframe=red!70!black,
+	colbacktitle=white,
+	coltitle=red!70!black,
+	fonttitle=\bfseries,
+	IfValueT={#1}{attach boxed title to top left={xshift=1cm,yshift=-2mm}, title={#1}, boxed title style={colback=white,colframe=red!70!black}}
+}
+
+\NewTColorBox{box_yellow}{ !O{} }{
+	breakable,
+	enhanced,
+	colframe=orange!75!black,
+	colbacktitle=white,
+	coltitle=orange!80!black,
+	fonttitle=\bfseries,
+	IfValueT={#1}{attach boxed title to top left={xshift=1cm,yshift=-2mm}, title={#1}, boxed title style={colback=white,colframe=orange!75!black}}
+}
+
+\NewTColorBox{box_blue}{ !O{} }{
+	breakable,
+	enhanced,
+	colframe=blue!40!white,
+	colbacktitle=white,
+	coltitle=blue!40!black,
+	fonttitle=\bfseries,
+	IfValueT={#1}{attach boxed title to top left={xshift=1cm,yshift=-2mm}, title={#1}, boxed title style={colback=white,colframe=blue!40!white}}
+}
+
+% lwarp's tcolorbox emulation only renders a title bar from a plain title= key;
+% the "attach boxed title" style above produces no HTML title. Redefine for HTML
+% with a plain title (colored bar, white text) so titles appear in HTML output.
+\begin{warpHTML}
+\RenewTColorBox{box_red}{ !O{} }{
+	colframe=red!70!black,
+	coltitle=white,
+	fonttitle=\bfseries,
+	IfValueT={#1}{title={#1}}
+}
+\RenewTColorBox{box_yellow}{ !O{} }{
+	colframe=orange!75!black,
+	coltitle=white,
+	fonttitle=\bfseries,
+	IfValueT={#1}{title={#1}}
+}
+\RenewTColorBox{box_blue}{ !O{} }{
+	colframe=blue!40!white,
+	coltitle=white,
+	fonttitle=\bfseries,
+	IfValueT={#1}{title={#1}}
+}
+\end{warpHTML}
+
+\usepackage[colorlinks,bookmarksopen,bookmarksnumbered,citecolor=red,urlcolor=red]{hyperref}
+\PassOptionsToPackage{
+	type={CC},
+	modifier={by-nc-sa},
+	version={4.0}
+}{doclicense}
+\usepackage{doclicense}
+
+\begin{document}
+\title{Plotting}
+\author{Dima Bykhovsky}
+\maketitle
+
+\noindent This is an on-going project that is frequently updated. The author assumes no responsibility for errors or omissions.
+
+\doclicenseLongText
+
+\setcounter{tocdepth}{1}
+\tableofcontents
+\begin{warpHTML}
+Link to \href{plottingc.pdf}{PDF version} of this document.
+\end{warpHTML}
+
+\input{content}
+
+\end{document}

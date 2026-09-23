@@ -1,0 +1,62 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Need write access to push to gh-pages branch
+permissions:
+  contents: write
+
+# Allow only one concurrent deployment, skip queued runs (only latest matters)
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v5
+
+      - name: Collect web files
+        run: |
+          mkdir -p _site
+
+          # HTML: paginated output only (plotting_html.html is not tracked)
+          cp index.html _site/
+          cp node-*.html _site/
+
+          # CSS (lwarp_academic.css imports lwarp.css)
+          cp lwarp.css _site/
+          cp lwarp_academic.css _site/
+
+          # PDF: index.html links to plottingc.pdf, the pdfsizeopt-compressed build
+          cp plottingc.pdf _site/
+
+          # Figures: SVG plus the raster photo(s), paths preserved
+          find figs \( -name '*.svg' -o -name '*.jpg' -o -name '*.jpeg' -o -name '*.png' \) \
+            | while read -r fig; do
+            mkdir -p "_site/$(dirname "$fig")"
+            cp "$fig" "_site/$fig"
+          done
+
+          # lwarp's extracted math/picture images, if any
+          if [ -d main-images ]; then cp -r main-images _site/; fi
+
+          # Tell GitHub Pages to skip Jekyll processing
+          touch _site/.nojekyll
+
+          # Summary
+          echo "### Deployment contents" >> "$GITHUB_STEP_SUMMARY"
+          echo "- HTML files: $(ls -1 _site/*.html | wc -l)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Figures: $(find _site/figs -type f | wc -l)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Total size: $(du -sh _site | cut -f1)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
