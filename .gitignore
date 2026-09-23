@@ -51,3 +51,8 @@ Thumbs.db
 *~
 /.claude/settings.local.json
 /.idea
+
+# lwarp sample themes, regenerated on every build (lwarp_academic.css is the one used)
+lwarp_formal.css
+lwarp_sagebrush.css
+sample_project.css
