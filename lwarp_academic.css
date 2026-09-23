@@ -108,6 +108,10 @@ table { border-collapse: collapse; }
 /* lwarp draws \hline / \midrule as a border-top on the row after it (lwarp.css);
    only recolor that border. A border-bottom here drew a phantom rule under the row. */
 table tr.hline td { border-top-color: #1a3a5c; }
+/* lwarp sometimes wraps a cell's text in a stray <p> (e.g. after a leading \quad);
+   keep it inline so the cell looks like its neighbors. The figure selector outranks
+   lwarp.css's "figure div.minipage p { font-size: 85% }" inside subtables. */
+table td > p, figure div.minipage table td > p { display: inline; margin: 0; font-size: inherit; }
 /* Equal-width digits, so right-aligned numbers with a fixed number of decimals
    line up on the decimal point (the HTML stand-in for the siunitx S column) */
 td { font-variant-numeric: tabular-nums; }
