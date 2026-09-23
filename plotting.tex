@@ -145,6 +145,14 @@ marginparwidth=1cm]{geometry}
 }
 \end{warpHTML}
 
+% Indent of a sub-row in a table's first column. lwarp's \quad and \hspace close and
+% reopen the paragraph inside a minipage (a subtable), which wraps the cell text in a
+% stray <p> and shifts it right; a bare em space does not.
+\newcommand{\tabindent}{\quad}
+\begin{warpHTML}
+\renewcommand{\tabindent}{\HTMLunicode{2003}}
+\end{warpHTML}
+
 \usepackage[colorlinks,bookmarksopen,bookmarksnumbered,citecolor=red,urlcolor=red]{hyperref}
 \PassOptionsToPackage{
 	type={CC},
